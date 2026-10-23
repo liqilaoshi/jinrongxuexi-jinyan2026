@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>经贸中文词语复习与检测系统 (1-29词)</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap');
+    body {
+      font-family: 'Noto Sans SC', sans-serif;
+      background-color: #f8fafc;
+    }
+    .wave-bar {
+      display: inline-block;
+      width: 4px;
+      height: 16px;
+      margin: 0 2px;
+      background-color: #3b82f6;
+      border-radius: 2px;
+      animation: wave 1s infinite ease-in-out;
+    }
+    .wave-bar:nth-child(2) { animation-delay: 0.1s; }
+    .wave-bar:nth-child(3) { animation-delay: 0.2s; }
+    .wave-bar:nth-child(4) { animation-delay: 0.3s; }
+    .wave-bar:nth-child(5) { animation-delay: 0.4s; }
+    @keyframes wave {
+      0%, 100% { height: 8px; }
+      50% { height: 28px; }
+    }
+  </style>
+</head>
+<body class="text-slate-800 min-h-screen flex flex-col">
+
+  <!-- 顶部导航 -->
+  <header class="bg-indigo-600 text-white shadow-md sticky top-0 z-50">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center">
+      <div class="flex items-center space-x-2">
+        <i class="fa-solid me-2 fa-book-bookmark text-2xl text-amber-300"></i>
+        <h1 class="text-xl font-bold tracking-wide">经贸中文词语复习（第1-29词）</h1>
+      </div>
+      <nav class="flex space-x-1 mt-2 sm:mt-0">
+        <button onclick="switchTab('tab1')" id="nav-tab1" class="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors bg-indigo-700 text-white shadow-inner">
+          <i class="fa-solid fa-list-ul mr-1"></i>生词卡片
+        </button>
+        <button onclick="switchTab('tab2')" id="nav-tab2" class="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors hover:bg-indigo-500 text-indigo-100">
+          <i class="fa-solid fa-gamepad mr-1"></i>认读闯关
+        </button>
+        <button onclick="switchTab('tab3')" id="nav-tab3" class="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors hover:bg-indigo-500 text-indigo-100">
+          <i class="fa-solid fa-pen-to-square mr-1"></i>搭配练习
+        </button>
+        <button onclick="switchTab('tab4')" id="nav-tab4" class="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors hover:bg-indigo-500 text-indigo-100">
+          <i class="fa-solid fa-square-poll-vertical mr-1"></i>成绩建议
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- 主体区域 -->
+  <main class="max-w-5xl mx-auto px-4 py-6 flex-1 w-full">
+
+    <!-- 第一页：生词卡片浏览 -->
+    <section id="tab1" class="space-y-4">
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div>
+          <h2 class="text-lg font-bold text-slate-800">生词总览列表 (全29词)</h2>
+          <p class="text-xs text-slate-500">点击喇叭图标可播放标准中文发音</p>
+        </div>
+        <div class="relative w-full sm:w-64">
+          <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400"></i>
+          <input type="text" id="vocabSearch" oninput="filterVocab()" placeholder="搜索汉字/拼音/英文..." 
+                 class="w-full pl-9 pr-3 py-1.5 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        </div>
+      </div>
+
+      <div id="vocabGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        <!-- 动态生成 29 个卡片 -->
+      </div>
+    </section>
+
+    <!-- 第二页：看词认读·积分闯关游戏 -->
+    <section id="tab2" class="hidden space-y-4">
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 text-center max-w-xl mx-auto relative overflow-hidden">
+        <div class="flex justify-between items-center text-sm font-semibold mb-4 text-slate-600">
+          <span>当前积分: <strong id="gameScore" class="text-indigo-600 text-lg">0</strong></span>
+          <span id="comboBadge" class="hidden bg-amber-100 text-amber-700 px-2.5 py-0.5 rounded-full text-xs font-bold animate-bounce">
+            🔥 Combo x<span id="comboCount">0</span>
+          </span>
+          <span>剩余时间: <strong id="timerText" class="text-rose-500 text-lg">15</strong>s</span>
+        </div>
+
+        <!-- 进度条 -->
+        <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden mb-6">
+          <div id="timerBar" class="bg-indigo-500 h-full w-full transition-all duration-1000 linear"></div>
+        </div>
+
+        <!-- 词语展示区 -->
+        <div class="py-6 bg-slate-50 rounded-xl border border-dashed border-slate-300 mb-6 relative">
+          <span id="cardIndex" class="absolute top-2 left-3 text-xs text-slate-400">词语 1/29</span>
+          <div id="targetWord" class="text-4xl font-bold text-slate-800 tracking-wider mb-2">宣布</div>
+          <div id="targetPinyin" class="text-slate-500 text-sm font-medium">xuānbù</div>
+          <div id="targetPosEng" class="text-indigo-600 text-xs mt-1">（动）declare; proclaim; announce</div>
+        </div>
+
+        <!-- 麦克风与互动按钮区 -->
+        <div class="space-y-4">
+          <div class="flex justify-center items-center gap-3">
+            <button onclick="toggleSpeechRecognition()" id="micBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-5 py-2.5 rounded-xl shadow transition-colors flex items-center gap-2">
+              <i class="fa-solid fa-microphone"></i> <span id="micBtnText">开始语音识别跟读</span>
+            </button>
+            <button onclick="speakCurrentWord()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 p-2.5 rounded-xl transition-colors" title="示范发音">
+              <i class="fa-solid fa-volume-high"></i>
+            </button>
+          </div>
+
+          <!-- 音波动画（语音识别监听时显示） -->
+          <div id="waveAnim" class="hidden py-2 bg-indigo-50/60 rounded-xl">
+            <div class="flex justify-center items-center h-6">
+              <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
+            </div>
+            <p id="speechResultText" class="text-xs text-indigo-600 mt-1 font-medium">正在聆听您的发音，请大声读出词语...</p>
+          </div>
+
+          <!-- 手动确认控制（完美备用） -->
+          <div class="pt-2 border-t border-slate-100 flex justify-center gap-4">
+            <button onclick="handleUserGrade(true)" class="bg-emerald-500 hover:bg-emerald-600 text-white text-xs px-4 py-2 rounded-lg font-medium shadow-sm transition-colors">
+              <i class="fa-solid fa-check mr-1"></i>手动通过 (+10)
+            </button>
+            <button onclick="handleUserGrade(false)" class="bg-rose-500 hover:bg-rose-600 text-white text-xs px-4 py-2 rounded-lg font-medium shadow-sm transition-colors">
+              <i class="fa-solid fa-xmark mr-1"></i>不熟悉/下一个
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 第三页：词语搭配自动批改练习 -->
+    <section id="tab3" class="hidden space-y-4">
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 max-w-2xl mx-auto">
+        <div class="flex justify-between items-center mb-4 border-b border-slate-100 pb-3">
+          <div>
+            <h2 class="text-base font-bold text-slate-800">经贸高频词语搭配测验</h2>
+            <p class="text-xs text-slate-500">根据经贸语境，选择最恰当的动词或形容词进行搭配</p>
+          </div>
+          <span class="text-xs font-semibold bg-indigo-50 text-indigo-600 px-2.5 py-1 rounded-full">满分 50 分</span>
+        </div>
+
+        <form id="collocationForm" class="space-y-5">
+          <!-- 动态题目 5 题，每题10分 -->
+        </form>
+
+        <div class="mt-6 pt-4 border-t border-slate-100 flex justify-end">
+          <button type="button" onclick="gradeCollocations()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-6 py-2.5 rounded-xl shadow transition-colors">
+            提交练习并自动批改
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 第四页：成绩单与复习建议 -->
+    <section id="tab4" class="hidden space-y-4">
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 max-w-xl mx-auto space-y-6">
+        <div class="text-center">
+          <div class="inline-block p-3 rounded-full bg-indigo-50 text-indigo-600 mb-2">
+            <i class="fa-solid fa-trophy text-3xl"></i>
+          </div>
+          <h2 class="text-xl font-bold text-slate-800">复习成绩与评估报告</h2>
+          <p class="text-xs text-slate-400 mt-1">数据基于认读闯关与词语搭配练习自动汇算</p>
+        </div>
+
+        <!-- 分数面板 -->
+        <div class="grid grid-cols-2 gap-4">
+          <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 text-center">
+            <span class="text-xs text-slate-500 block mb-1">认读得分 (最高 Combo: <span id="maxCombo">0</span>)</span>
+            <span id="finalGameScore" class="text-2xl font-extrabold text-indigo-600">0</span>
+            <span class="text-xs text-slate-400"> / 50</span>
+          </div>
+          <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 text-center">
+            <span class="text-xs text-slate-500 block mb-1">搭配测试得分</span>
+            <span id="finalQuizScore" class="text-2xl font-extrabold text-indigo-600">0</span>
+            <span class="text-xs text-slate-400"> / 50</span>
+          </div>
+        </div>
+
+        <div class="bg-indigo-600 text-white p-4 rounded-xl text-center shadow-md">
+          <span class="text-xs text-indigo-200 uppercase font-semibold">综合总得分</span>
+          <div class="text-4xl font-black my-1" id="totalScore">0</div>
+          <p id="gradeBadge" class="text-xs font-medium text-indigo-100">等待完成测验...</p>
+        </div>
+
+        <!-- 智能诊断与建议 -->
+        <div class="bg-amber-50 border border-amber-200 p-4 rounded-xl space-y-2">
+          <h3 class="text-sm font-bold text-amber-800 flex items-center gap-2">
+            <i class="fa-solid fa-lightbulb text-amber-600"></i> 智能复习建议
+          </h3>
+          <p id="adviceText" class="text-xs text-amber-900 leading-relaxed">
+            请先前往“看词认读”与“搭配练习”完成交互测评,系统将为您生成定制化复习策略。
+          </p>
+        </div>
+
+        <div class="text-center pt-2">
+          <button onclick="switchTab('tab2')" class="text-xs text-indigo-600 font-semibold hover:underline">
+            <i class="fa-solid fa-rotate-right mr-1"></i>重新挑战提高分数
+          </button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    // 29个词语完整数据库
+    const vocabularyList = [
+      { id: 1, word: "宣布", pinyin: "xuānbù", pos: "动", eng: "declare; proclaim; announce" },
+      { id: 2, word: "调整", pinyin: "tiáozhěng", pos: "动", eng: "adjust" },
+      { id: 3, word: "金融", pinyin: "jīnróng", pos: "名", eng: "finance; banking" },
+      { id: 4, word: "存款", pinyin: "cúnkuǎn", pos: "动、名", eng: "deposits; bank savings" },
+      { id: 5, word: "贷款", pinyin: "dàikuǎn", pos: "动、名", eng: "grant advances; make loans" },
+      { id: 6, word: "基准利率", pinyin: "jīzhǔn lìlǜ", pos: "名", eng: "basic rate" },
+      { id: 7, word: "央行", pinyin: "Yāngháng", pos: "名", eng: "central bank" },
+      { id: 8, word: "现行", pinyin: "xiànxíng", pos: "形", eng: "current" },
+      { id: 9, word: "百分点", pinyin: "bǎifēndiǎn", pos: "名", eng: "percentage; proportion in percentage" },
+      { id: 10, word: "档次", pinyin: "dàngcì", pos: "名", eng: "grading; grade" },
+      { id: 11, word: "活期", pinyin: "huóqī", pos: "形", eng: "current (deposit)" },
+      { id: 12, word: "下调", pinyin: "xiàtiáo", pos: "动", eng: "float downward" },
+      { id: 13, word: "累计", pinyin: "lěijì", pos: "动", eng: "add up; accumulative total" },
+      { id: 14, word: "消费", pinyin: "xiāofèi", pos: "动", eng: "consume; expense" },
+      { id: 15, word: "同比", pinyin: "tóngbǐ", pos: "动", eng: "compare the same period of last year" },
+      { id: 16, word: "上涨", pinyin: "shàngzhǎng", pos: "动", eng: "rise; go up" },
+      { id: 17, word: "引导", pinyin: "yǐndǎo", pos: "动", eng: "guide; lead" },
+      { id: 18, word: "货币", pinyin: "huòbì", pos: "名", eng: "money; currency" },
+      { id: 19, word: "信贷", pinyin: "xìndài", pos: "名", eng: "credit" },
+      { id: 20, word: "过热", pinyin: "guòrè", pos: "形", eng: "overheated" },
+      { id: 21, word: "物价", pinyin: "wùjià", pos: "名", eng: "commodity price" },
+      { id: 22, word: "通货膨胀", pinyin: "tōnghuò péngzhàng", pos: "名", eng: "inflation of currency" },
+      { id: 23, word: "商务部", pinyin: "Shāngwùbù", pos: "名", eng: "Commerce Department" },
+      { id: 24, word: "低迷", pinyin: "dīmí", pos: "形", eng: "depression" },
+      { id: 25, word: "跨国", pinyin: "kuàguó", pos: "形", eng: "transnational" },
+      { id: 26, word: "大幅", pinyin: "dàfú", pos: "副", eng: "a large extent" },
+      { id: 27, word: "金额", pinyin: "jīn'é", pos: "名", eng: "amount of money" },
+      { id: 28, word: "截至", pinyin: "jiézhì", pos: "动", eng: "deadline" },
+      { id: 29, word: "统计", pinyin: "tǒngjì", pos: "动", eng: "statistics" }
+    ];
+
+    // 搭配练习题目集
+    const collocationQuestions = [
+      { id: 1, text: "央行决定再次（ ）金融机构人民币存贷款基准利率。", options: ["调整", "低迷", "统计", "累计"], correct: "调整" },
+      { id: 2, text: "活期存款基准利率由现行的 0.81% （ ）为 0.72%。", options: ["上涨", "下调", "引导", "宣布"], correct: "下调" },
+      { id: 3, text: "此次利率调整有利于（ ）货币信贷和投资的合理增长。", options: ["防止", "引导", "截至", "消费"], correct: "引导" },
+      { id: 4, text: "采取紧缩政策是为了（ ）物价出现明显的通货膨胀。", options: ["防止", "调整", "下调", "累计"], correct: "防止" },
+      { id: 5, text: "在世界经济持续（ ）的情况下，中国吸收外资依然稳定。", options: ["过热", "低迷", "大幅", "现行"], correct: "低迷" }
+    ];
+
+    // 全局状态管理
+    let gameScore = 0;
+    let combo = 0;
+    let maxComboCount = 0;
+    let quizScore = 0;
+    let currentWordIndex = 0;
+    let timer = null;
+    let timeLeft = 15;
+    let isRecognizing = false;
+    let recognition = null;
+
+    // 页面初始化
+    window.onload = () => {
+      renderVocabGrid(vocabularyList);
+      renderCollocations();
+      initSpeechRecognition();
+    };
+
+    // 选项卡切换
+    function switchTab(tabId) {
+      ['tab1', 'tab2', 'tab3', 'tab4'].forEach(id => {
+        document.getElementById(id).classList.add('hidden');
+        document.getElementById('nav-' + id).className = "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors hover:bg-indigo-500 text-indigo-100";
+      });
+      document.getElementById(tabId).classList.remove('hidden');
+      document.getElementById('nav-' + tabId).className = "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors bg-indigo-700 text-white shadow-inner";
+
+      if (tabId === 'tab2' && currentWordIndex === 0) {
+        startNewGameRound();
+      }
+      if (tabId !== 'tab2') {
+        stopSpeechRecognition();
+      }
+      if (tabId === 'tab4') {
+        updateSummaryPage();
+      }
+    }
+
+    // 渲染第一页生词列表
+    function renderVocabGrid(list) {
+      const grid = document.getElementById('vocabGrid');
+      grid.innerHTML = list.map(item => `
+        <div class="bg-white p-3.5 rounded-xl border border-slate-200 hover:border-indigo-300 hover:shadow-md transition-all flex items-center justify-between">
+          <div class="space-y-0.5">
+            <div class="flex items-baseline gap-2">
+              <span class="text-xs font-bold text-indigo-500">#${item.id}</span>
+              <span class="text-lg font-bold text-slate-800">${item.word}</span>
+              <span class="text-xs text-slate-500">${item.pinyin}</span>
+            </div>
+            <p class="text-xs text-slate-600">
+              ${item.pos ? `<span class="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded text-[10px] mr-1">${item.pos}</span>` : ''}
+              ${item.eng}
+            </p>
+          </div>
+          <button onclick="speakText('${item.word}')" class="text-slate-400 hover:text-indigo-600 p-2 text-base transition-colors" title="播放发音">
+            <i class="fa-solid fa-volume-high"></i>
+          </button>
+        </div>
+      `).join('');
+    }
+
+    // 搜索筛选
+    function filterVocab() {
+      const query = document.getElementById('vocabSearch').value.toLowerCase();
+      const filtered = vocabularyList.filter(item => 
+        item.word.includes(query) || 
+        item.pinyin.toLowerCase().includes(query) || 
+        item.eng.toLowerCase().includes(query)
+      );
+      renderVocabGrid(filtered);
+    }
+
+    // Web Speech API 发音
+    function speakText(text) {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'zh-CN';
+        utterance.rate = 0.9;
+        window.speechSynthesis.speak(utterance);
+      }
+    }
+
+    // 第二页：看词认读游戏逻辑
+    function startNewGameRound() {
+      stopSpeechRecognition();
+      if (currentWordIndex >= vocabularyList.length) {
+        currentWordIndex = 0; // 循环刷新
+      }
+      const current = vocabularyList[currentWordIndex];
+      document.getElementById('cardIndex').innerText = `词语 ${currentWordIndex + 1}/${vocabularyList.length}`;
+      document.getElementById('targetWord').innerText = current.word;
+      document.getElementById('targetPinyin').innerText = current.pinyin;
+      document.getElementById('targetPosEng').innerText = `${current.pos ? '（' + current.pos + '）' : ''}${current.eng}`;
+
+      resetTimer();
+    }
+
+    function resetTimer() {
+      clearInterval(timer);
+      timeLeft = 15;
+      document.getElementById('timerText').innerText = timeLeft;
+      document.getElementById('timerBar').style.width = '100%';
+
+      timer = setInterval(() => {
+        timeLeft--;
+        document.getElementById('timerText').innerText = timeLeft;
+        document.getElementById('timerBar').style.width = `${(timeLeft / 15) * 100}%`;
+
+        if (timeLeft <= 0) {
+          clearInterval(timer);
+          stopSpeechRecognition();
+          handleUserGrade(false); // 超时算失败
+        }
+      }, 1000);
+    }
+
+    function speakCurrentWord() {
+      const word = vocabularyList[currentWordIndex].word;
+      speakText(word);
+    }
+
+    function handleUserGrade(isCorrect) {
+      clearInterval(timer);
+      stopSpeechRecognition();
+
+      if (isCorrect) {
+        combo++;
+        if (combo > maxComboCount) maxComboCount = combo;
+        const addScore = 10 + (combo > 1 ? combo * 2 : 0);
+        gameScore += addScore;
+
+        if (typeof confetti === 'function') {
+          confetti({ particleCount: 30, spread: 60, origin: { y: 0.7 } });
+        }
+      } else {
+        combo = 0;
+      }
+
+      // 更新界面
+      document.getElementById('gameScore').innerText = gameScore;
+      document.getElementById('comboCount').innerText = combo;
+      const comboBadge = document.getElementById('comboBadge');
+      if (combo > 1) {
+        comboBadge.classList.remove('hidden');
+      } else {
+        comboBadge.classList.add('hidden');
+      }
+
+      currentWordIndex++;
+      startNewGameRound();
+    }
+
+    // 真正的语义语音识别初始化
+    function initSpeechRecognition() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        recognition = new SpeechRecognition();
+        recognition.lang = 'zh-CN';
+        recognition.continuous = true;
+        recognition.interimResults = true;
+
+        recognition.onstart = () => {
+          isRecognizing = true;
+          document.getElementById('waveAnim').classList.remove('hidden');
+          document.getElementById('micBtn').classList.replace('bg-indigo-600', 'bg-rose-600');
+          document.getElementById('micBtnText').innerText = "正在聆听语音...";
+          document.getElementById('speechResultText').innerText = '正在聆听，请朗读当前词语...';
+        };
+
+        recognition.onresult = (event) => {
+          let interimTranscript = '';
+          let finalTranscript = '';
+
+          for (let i = event.resultIndex; i < event.results.length; ++i) {
+            if (event.results[i].isFinal) {
+              finalTranscript += event.results[i][0].transcript;
+            } else {
+              interimTranscript += event.results[i][0].transcript;
+            }
+          }
+
+          const spokenText = (finalTranscript || interimTranscript).trim().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()，。！？]/g,"");
+          const target = vocabularyList[currentWordIndex].word;
+
+          if (spokenText) {
+            document.getElementById('speechResultText').innerText = `听到: "${spokenText}"`;
+            
+            // 精确匹配：只要识别到的文本中包含了当前目标词汇，即判定通关！
+            if (spokenText.includes(target) || target.includes(spokenText)) {
+              document.getElementById('speechResultText').innerText = `✅ 识别成功：“${target}”！`;
+              stopSpeechRecognition();
+              setTimeout(() => {
+                handleUserGrade(true);
+              }, 500);
+            }
+          }
+        };
+
+        recognition.onerror = (event) => {
+          console.warn("语音识别提示:", event.error);
+          document.getElementById('speechResultText').innerText = '未能清晰捕捉，请重试或点击手动通过';
+        };
+
+        recognition.onend = () => {
+          if (isRecognizing) {
+            try { recognition.start(); } catch(e) {}
+          }
+        };
+      }
+    }
+
+    function toggleSpeechRecognition() {
+      if (!recognition) {
+        alert("您的浏览器暂不支持 SpeechRecognition 语音识别，请使用下方的【手动通过】按钮进行练习。");
+        return;
+      }
+      if (isRecognizing) {
+        stopSpeechRecognition();
+      } else {
+        try {
+          recognition.start();
+        } catch(e) {
+          isRecognizing = false;
+        }
+      }
+    }
+
+    function stopSpeechRecognition() {
+      isRecognizing = false;
+      if (recognition) {
+        try { recognition.stop(); } catch(e) {}
+      }
+      document.getElementById('waveAnim').classList.add('hidden');
+      document.getElementById('micBtn').classList.replace('bg-rose-600', 'bg-indigo-600');
+      document.getElementById('micBtnText').innerText = "开始语音识别跟读";
+    }
+
+    // 第三页：渲染搭配题目
+    function renderCollocations() {
+      const form = document.getElementById('collocationForm');
+      form.innerHTML = collocationQuestions.map((q, idx) => `
+        <div class="space-y-2 p-3.5 bg-slate-50 rounded-xl border border-slate-200">
+          <p class="text-sm font-semibold text-slate-800">${idx + 1}. ${q.text}</p>
+          <div class="grid grid-cols-2 gap-2 pt-1">
+            ${q.options.map(opt => `
+              <label class="flex items-center space-x-2 bg-white p-2 rounded-lg border border-slate-200 text-xs font-medium text-slate-700 cursor-pointer hover:border-indigo-300">
+                <input type="radio" name="q${q.id}" value="${opt}" class="text-indigo-600 focus:ring-indigo-500">
+                <span>${opt}</span>
+              </label>
+            `).join('')}
+          </div>
+          <div id="feedback-q${q.id}" class="text-xs font-medium hidden pt-1"></div>
+        </div>
+      `).join('');
+    }
+
+    // 搭配练习批改
+    function gradeCollocations() {
+      let correctCount = 0;
+      collocationQuestions.forEach(q => {
+        const selected = document.querySelector(`input[name="q${q.id}"]:checked`);
+        const feedbackEl = document.getElementById(`feedback-q${q.id}`);
+        feedbackEl.classList.remove('hidden', 'text-emerald-600', 'text-rose-600');
+
+        if (selected && selected.value === q.correct) {
+          correctCount++;
+          feedbackEl.classList.add('text-emerald-600');
+          feedbackEl.innerHTML = `<i class="fa-solid fa-circle-check mr-1"></i>回答正确！`;
+        } else {
+          feedbackEl.classList.add('text-rose-600');
+          feedbackEl.innerHTML = `<i class="fa-solid fa-circle-xmark mr-1"></i>正确搭配应为：“${q.correct}”`;
+        }
+      });
+
+      quizScore = correctCount * 10;
+      alert(`搭配练习提交成功！得分: ${quizScore} / 50 分`);
+      switchTab('tab4');
+    }
+
+    // 第四页：汇总与评估建议
+    function updateSummaryPage() {
+      const normedGameScore = Math.min(50, Math.round((gameScore / 150) * 50));
+      const total = normedGameScore + quizScore;
+
+      document.getElementById('finalGameScore').innerText = normedGameScore;
+      document.getElementById('finalQuizScore').innerText = quizScore;
+      document.getElementById('maxCombo').innerText = maxComboCount;
+      document.getElementById('totalScore').innerText = total;
+
+      const badge = document.getElementById('gradeBadge');
+      const advice = document.getElementById('adviceText');
+
+      if (total >= 90) {
+        badge.innerText = "优秀！经贸专业词汇掌握极其扎实";
+        advice.innerText = "您对核心经贸词汇（如利率调整、通货膨胀、外资流入等）的认读与搭配使用均达到了优秀水平！建议继续阅读财经新闻保持语感。";
+      } else if (total >= 70) {
+        badge.innerText = "良好！基本掌握核心经贸搭配";
+        advice.innerText = "您对大部分基础生词掌握良好，但在高频词汇搭配（如“引导+货币信贷”、“下调+基准利率”）上仍有提升空间，建议多复习第三页搭配练习。";
+      } else {
+        badge.innerText = "需加油！建议重新复习词卡";
+        advice.innerText = "建议返回第一页生词卡片，利用语音功能逐个跟读发音，并在第二页多加练习认读速度，熟能生巧！";
+      }
+    }
+  </script>
+</body>
+</html>
