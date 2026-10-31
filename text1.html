@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>中文金融新闻精读与理解检测</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f8fafc;
+        }
+
+        /* 悬浮提示框样式 (CSS Tooltip) */
+        .vocab-word {
+            position: relative;
+            display: inline-block;
+            color: #1d4ed8;
+            font-weight: 600;
+            border-bottom: 2px dashed #93c5fd;
+            padding: 0 2px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-radius: 2px;
+        }
+
+        .vocab-word:hover {
+            background-color: #dbeafe;
+            border-bottom-color: #2563eb;
+        }
+
+        .vocab-word .tooltip {
+            visibility: hidden;
+            opacity: 0;
+            width: max-content;
+            max-width: 260px;
+            background-color: #0f172a;
+            color: #fff;
+            text-align: center;
+            border-radius: 8px;
+            padding: 8px 12px;
+            position: absolute;
+            z-index: 50;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%) translateY(4px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25);
+            transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s;
+            pointer-events: none;
+        }
+
+        .vocab-word .tooltip::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -6px;
+            border-width: 6px;
+            border-style: solid;
+            border-color: #0f172a transparent transparent transparent;
+        }
+
+        .vocab-word:hover .tooltip,
+        .vocab-word:focus .tooltip {
+            visibility: visible;
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* 页面卡片切换平滑过渡 */
+        .step-content {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        .step-content.active {
+            display: block;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-800 flex flex-col justify-between">
+
+    <!-- 顶部导航与步骤进度条 -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+        <div class="max-w-5xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold text-lg shadow-md shadow-blue-200">
+                    <i class="fa-solid fa-book-open-reader"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-slate-900 leading-tight">中文金融新闻阅读与理解</h1>
+                    <p class="text-xs text-slate-500">图文精读 · 悬浮查词 · 智能检测</p>
+                </div>
+            </div>
+
+            <!-- 分步导航器 -->
+            <div class="flex items-center gap-2 text-xs font-medium">
+                <div id="nav-step-1" class="flex items-center gap-1.5 text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full border border-blue-200 font-semibold cursor-pointer" onclick="switchStep(1)">
+                    <span class="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px]">1</span>
+                    <span>图文精读</span>
+                </div>
+                <i class="fa-solid fa-chevron-right text-slate-300 text-[10px]"></i>
+                <div id="nav-step-2" class="flex items-center gap-1.5 text-slate-400 px-3 py-1.5 rounded-full border border-transparent cursor-pointer" onclick="switchStep(2)">
+                    <span class="w-5 h-5 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-[10px]">2</span>
+                    <span>理解测试</span>
+                </div>
+                <i class="fa-solid fa-chevron-right text-slate-300 text-[10px]"></i>
+                <div id="nav-step-3" class="flex items-center gap-1.5 text-slate-400 px-3 py-1.5 rounded-full border border-transparent cursor-pointer" onclick="switchStep(3)">
+                    <span class="w-5 h-5 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-[10px]">3</span>
+                    <span>成绩与词汇</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主体区域 -->
+    <main class="max-w-5xl mx-auto w-full px-4 py-8 flex-grow">
+
+        <!-- ================= PAGE 1: 文章阅读与悬浮词汇卡 ================= -->
+        <div id="step-1" class="step-content active">
+            <!-- 阅读提示 -->
+            <div class="bg-blue-50 border border-blue-200 rounded-2xl p-4 mb-6 flex items-start gap-3 text-blue-900 shadow-sm">
+                <i class="fa-solid fa-circle-info text-blue-600 mt-0.5 text-lg"></i>
+                <div class="text-sm">
+                    <p class="font-bold mb-0.5">阅读指引：</p>
+                    <p>将鼠标悬停（或点击）在带<span class="text-blue-600 font-semibold underline decoration-dashed">蓝色虚线</span>的重点词汇上，即可自动查看拼音及英文翻译。系统会自动记录您查阅过的生词并在最后一页进行复习展示。</p>
+                </div>
+            </div>
+
+            <!-- 图文卡片 -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 mb-8">
+                <!-- 新闻标题与查词计数 -->
+                <div class="border-b border-slate-100 pb-4 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2">
+                        <i class="fa-regular fa-newspaper text-blue-600"></i> 中国人民银行调整存贷款基准利率
+                    </h2>
+                    <div class="text-xs text-slate-600 bg-slate-100 px-3 py-1.5 rounded-full self-start sm:self-auto flex items-center gap-1.5">
+                        <i class="fa-solid fa-eye text-blue-500"></i> 已查阅生词: <span id="viewed-count" class="font-bold text-blue-600">0</span> 个
+                    </div>
+                </div>
+
+                <!-- 配图 (包含插图与边框排版) -->
+                <div class="my-6 flex justify-center">
+                    <div class="p-2 bg-slate-50 border border-slate-200 rounded-2xl shadow-sm max-w-xl w-full">
+                        <img src="https://i.ibb.co.com/7tdrpDdw/image.png" alt="中国人民银行大楼与报道" class="w-full h-auto rounded-xl object-cover" onerror="this.onerror=null; this.src='https://placehold.co/600x350/e2e8f0/1e293b?text=中国人民银行建筑图';">
+                        <p class="text-xs text-center text-slate-500 mt-2 font-medium">图1：中国人民银行调整金融机构人民币存贷款基准利率报道</p>
+                    </div>
+                </div>
+
+                <!-- 文章正文 (图片一提取内容) -->
+                <div class="text-slate-800 text-lg leading-relaxed sm:leading-loose space-y-6 text-justify">
+                    <p>
+                        <span class="vocab-word" data-word="中国人民银行" data-pinyin="zhōng guó rén mín yín háng" data-meaning="People's Bank of China">中国人民银行<span class="tooltip"><span class="block text-amber-300 text-xs font-normal">zhōng guó rén mín yín háng</span><span class="block text-sm font-semibold mt-0.5">People's Bank of China</span></span></span>20日宣布，自12月21日起调整<span class="vocab-word" data-word="金融机构" data-pinyin="jīn róng jī gòu" data-meaning="financial institution">金融机构<span class="tooltip"><span class="block text-amber-300 text-xs font-normal">jīn róng jī gòu</span><span class="block text-sm font-semibold mt-0.5">financial institution</span></span></span>人民币<span class="vocab-word" data-word="存贷款" data-pinyin="cún dài kuǎn" data-meaning="deposits and loans">存贷款<span class="tooltip"><span class="block text-amber-300 text-xs font-normal">cún dài kuǎn</span><span class="block text-sm font-semibold mt-0.5">deposits and loans</span></span></span><span class="vocab-word" data-word="基准利率" data-pinyin="jī zhǔn lì lǜ" data-meaning="benchmark interest rate">基准利率<span class="tooltip"><span class="block text-amber-300 text-xs font-normal">jī zhǔn lì lǜ</span><span class="block text-sm font-semibold mt-0.5">benchmark interest rate</span></span></span>。这是<span class="vocab-word" data-word="央行" data-pinyin="yāng háng" data-meaning="central bank">央行<span class="tooltip"><span class="block text-amber-300 text-xs font-normal">yāng háng</span><span class="block text-sm font-semibold mt-0.5">central bank</span></span></span>今年以来第六次<span class="vocab-word" data-word="上调" data-pinyin="shàng tiáo" data-meaning="raise / adjust upward">上调<span class="tooltip"><span class="block text-amber-300 text-xs font-normal">shàng tiáo</span><span class="block text-sm font-semibold mt-0.5">raise / adjust upward</span></span></span>银行基准利率。
+                    </p>
+                    <p>
+                        根据决定，自12月21日起，一年期<span class="vocab-word" data-word="存款" data-pinyin="cún kuǎn" data-meaning="deposit">存款<span class="tooltip"><span class="block text-amber-300 text-xs font-normal">cún kuǎn</span><span class="block text-sm font-semibold mt-0.5">deposit</span></span></span>基准利率由<span class="vocab-word" data-word="现行" data-pinyin="xiàn xíng" data-meaning="current / existing">现行<span class="tooltip"><span class="block text-amber-300 text-xs font-normal">xiàn xíng</span><span class="block text-sm font-semibold mt-0.5">current / existing</span></span></span>的 3.87% 提高到 4.14%，上调 0.27 个<span class="vocab-word" data-word="百分点" data-pinyin="bǎi fēn diǎn" data-meaning="percentage point">百分点<span class="tooltip"><span class="block text-amber-300 text-xs font-normal">bǎi fēn diǎn</span><span class="block text-sm font-semibold mt-0.5">percentage point</span></span></span>；一年期<span class="vocab-word" data-word="贷款" data-pinyin="dài kuǎn" data-meaning="loan">贷款<span class="tooltip"><span class="block text-amber-300 text-xs font-normal">dài kuǎn</span><span class="block text-sm font-semibold mt-0.5">loan</span></span></span>基准利率由现行的 7.29% 提高到 7.47%，上调 0.18 个百分点；其他各<span class="vocab-word" data-word="档次" data-pinyin="dàng cì" data-meaning="grade / level / tier">档次<span class="tooltip"><span class="block text-amber-300 text-xs font-normal">dàng cì</span><span class="block text-sm font-semibold mt-0.5">grade / level / tier</span></span></span>存、贷款基准利率相应调整。<span class="vocab-word" data-word="活期存款" data-pinyin="huó qī cún kuǎn" data-meaning="demand deposit">活期存款<span class="tooltip"><span class="block text-amber-300 text-xs font-normal">huó qī cún kuǎn</span><span class="block text-sm font-semibold mt-0.5">demand deposit</span></span></span>基准利率由现行的 0.81% <span class="vocab-word" data-word="下调" data-pinyin="xià tiáo" data-meaning="lower / cut">下调<span class="tooltip"><span class="block text-amber-300 text-xs font-normal">xià tiáo</span><span class="block text-sm font-semibold mt-0.5">lower / cut</span></span></span>为 0.72%。
+                    </p>
+                    <p>
+                        央行表示，今年1至11月份累计，<span class="vocab-word" data-word="居民消费价格" data-pinyin="jū mín xiāo fèi jià gé" data-meaning="Consumer Price Index (CPI)">居民消费价格<span class="tooltip"><span class="block text-amber-300 text-xs font-normal">jū mín xiāo fèi jià gé</span><span class="block text-sm font-semibold mt-0.5">Consumer Price Index (CPI)</span></span></span>(CPI)总水平<span class="vocab-word" data-word="同比" data-pinyin="tóng bǐ" data-meaning="year-on-year">同比<span class="tooltip"><span class="block text-amber-300 text-xs font-normal">tóng bǐ</span><span class="block text-sm font-semibold mt-0.5">year-on-year</span></span></span>上涨 4.6%。此次利率调整有利于<span class="vocab-word" data-word="引导" data-pinyin="yǐn dǎo" data-meaning="guide / lead">引导<span class="tooltip"><span class="block text-amber-300 text-xs font-normal">yǐn dǎo</span><span class="block text-sm font-semibold mt-0.5">guide / lead</span></span></span>货币<span class="vocab-word" data-word="信贷" data-pinyin="xìn dài" data-meaning="credit">信贷<span class="tooltip"><span class="block text-amber-300 text-xs font-normal">xìn dài</span><span class="block text-sm font-semibold mt-0.5">credit</span></span></span>和投资的合理增长，防止经济增长由<span class="vocab-word" data-word="偏快" data-pinyin="piān kuài" data-meaning="somewhat fast">偏快<span class="tooltip"><span class="block text-amber-300 text-xs font-normal">piān kuài</span><span class="block text-sm font-semibold mt-0.5">somewhat fast</span></span></span>转为<span class="vocab-word" data-word="过热" data-pinyin="guò rè" data-meaning="overheating">过热<span class="tooltip"><span class="block text-amber-300 text-xs font-normal">guò rè</span><span class="block text-sm font-semibold mt-0.5">overheating</span></span></span>；有利于防止物价出现明显的<span class="vocab-word" data-word="通货膨胀" data-pinyin="tōng huò péng zhàng" data-meaning="inflation">通货膨胀<span class="tooltip"><span class="block text-amber-300 text-xs font-normal">tōng huò péng zhàng</span><span class="block text-sm font-semibold mt-0.5">inflation</span></span></span>。
+                    </p>
+                </div>
+            </div>
+
+            <!-- 表格补充卡片 (图片二提取内容) -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 mb-8">
+                <div class="border-b border-slate-100 pb-3 mb-6">
+                    <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                        <i class="fa-solid fa-table text-blue-600"></i> 图二补充内容：金融机构人民币存贷款基准利率调整表
+                    </h2>
+                    <p class="text-xs text-slate-500 mt-1">单位：年利率%</p>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-slate-700 border-collapse">
+                        <thead>
+                            <tr class="bg-slate-100 border-b border-slate-200 font-bold text-slate-900">
+                                <th class="p-3">项 目</th>
+                                <th class="p-3 text-center">9月15日利率</th>
+                                <th class="p-3 text-center">12月21日利率</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200">
+                            <tr class="bg-slate-50 font-semibold">
+                                <td class="p-3">一、<span class="vocab-word" data-word="活期存款" data-pinyin="huó qī cún kuǎn" data-meaning="demand deposit">活期存款<span class="tooltip"><span class="block text-amber-300 text-xs font-normal">huó qī cún kuǎn</span><span class="block text-sm font-semibold mt-0.5">demand deposit</span></span></span></td>
+                                <td class="p-3 text-center">0.81</td>
+                                <td class="p-3 text-center font-bold text-blue-600">0.72</td>
+                            </tr>
+                            <tr class="bg-slate-50 font-semibold">
+                                <td colspan="3" class="p-3">二、<span class="vocab-word" data-word="定期存款" data-pinyin="dìng qī cún kuǎn" data-meaning="time deposit">定期存款<span class="tooltip"><span class="block text-amber-300 text-xs font-normal">dìng qī cún kuǎn</span><span class="block text-sm font-semibold mt-0.5">time deposit</span></span></span></td>
+                            </tr>
+                            <tr>
+                                <td class="p-3 pl-6">(一) <span class="vocab-word" data-word="整存整取" data-pinyin="zhěng cún zhěng qǔ" data-meaning="lump deposit and withdrawal">整存整取<span class="tooltip"><span class="block text-amber-300 text-xs font-normal">zhěng cún zhěng qǔ</span><span class="block text-sm font-semibold mt-0.5">lump deposit and withdrawal</span></span></span></td>
+                                <td class="p-3 text-center text-slate-400">-</td>
+                                <td class="p-3 text-center text-slate-400">-</td>
+                            </tr>
+                            <tr>
+                                <td class="p-3 pl-10">三个月</td>
+                                <td class="p-3 text-center">3.33</td>
+                                <td class="p-3 text-center">3.33</td>
+                            </tr>
+                            <tr>
+                                <td class="p-3 pl-10">半年</td>
+                                <td class="p-3 text-center">3.78</td>
+                                <td class="p-3 text-center">3.78</td>
+                            </tr>
+                            <tr>
+                                <td class="p-3 pl-10">一年</td>
+                                <td class="p-3 text-center">3.87</td>
+                                <td class="p-3 text-center font-bold text-blue-600">4.14</td>
+                            </tr>
+                            <tr>
+                                <td class="p-3 pl-10">二年</td>
+                                <td class="p-3 text-center">4.50</td>
+                                <td class="p-3 text-center">4.68</td>
+                            </tr>
+                            <tr>
+                                <td class="p-3 pl-10">三年</td>
+                                <td class="p-3 text-center">5.22</td>
+                                <td class="p-3 text-center">5.40</td>
+                            </tr>
+                            <tr>
+                                <td class="p-3 pl-10">五年</td>
+                                <td class="p-3 text-center">5.76</td>
+                                <td class="p-3 text-center">5.85</td>
+                            </tr>
+                            <tr class="bg-slate-50 font-semibold">
+                                <td colspan="3" class="p-3">三、贷款</td>
+                            </tr>
+                            <tr>
+                                <td class="p-3 pl-6">六个月</td>
+                                <td class="p-3 text-center">6.21</td>
+                                <td class="p-3 text-center">6.57</td>
+                            </tr>
+                            <tr>
+                                <td class="p-3 pl-6">一年</td>
+                                <td class="p-3 text-center">7.29</td>
+                                <td class="p-3 text-center font-bold text-blue-600">7.47</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 下一步按钮 -->
+            <div class="flex justify-end">
+                <button onclick="switchStep(2)" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg shadow-blue-200 transition duration-200 flex items-center gap-2">
+                    阅读完毕，开始理解测试 <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+
+
+        <!-- ================= PAGE 2: 自动批改测验 ================= -->
+        <div id="step-2" class="step-content">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 mb-8">
+                <div class="border-b border-slate-100 pb-4 mb-6 flex justify-between items-center">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-900">阅读理解检测（满分 100 分）</h2>
+                        <p class="text-xs text-slate-500 mt-1">包含选词填空与单项选择题，完成后点击底部提交按钮自动批改。</p>
+                    </div>
+                    <span class="text-xs bg-amber-50 text-amber-700 border border-amber-200 px-3 py-1.5 rounded-full font-semibold">
+                        <i class="fa-solid fa-clock"></i> 不限时间
+                    </span>
+                </div>
+
+                <form id="quiz-form">
+                    <!-- 第一部分：选词填空题 (50分) -->
+                    <div class="mb-10">
+                        <div class="flex items-center gap-2 mb-4">
+                            <span class="bg-blue-600 text-white font-bold text-xs px-2.5 py-1 rounded-md">第一部分</span>
+                            <h3 class="text-lg font-bold text-slate-800">选词填空题（共 5 题，每题 10 分，共 50 分）</h3>
+                        </div>
+
+                        <!-- 词汇备选框 -->
+                        <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-6">
+                            <p class="text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">可选词汇库：</p>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="bg-white border border-slate-300 text-slate-700 text-sm px-3 py-1 rounded-lg font-medium shadow-sm">基准利率</span>
+                                <span class="bg-white border border-slate-300 text-slate-700 text-sm px-3 py-1 rounded-lg font-medium shadow-sm">通货膨胀</span>
+                                <span class="bg-white border border-slate-300 text-slate-700 text-sm px-3 py-1 rounded-lg font-medium shadow-sm">信贷</span>
+                                <span class="bg-white border border-slate-300 text-slate-700 text-sm px-3 py-1 rounded-lg font-medium shadow-sm">活期存款</span>
+                                <span class="bg-white border border-slate-300 text-slate-700 text-sm px-3 py-1 rounded-lg font-medium shadow-sm">偏快</span>
+                            </div>
+                        </div>
+
+                        <div class="space-y-6 text-slate-700 leading-relaxed">
+                            <!-- Blank 1 -->
+                            <div class="p-4 rounded-xl border border-slate-100 bg-slate-50/50">
+                                <label class="block mb-2 font-medium">
+                                    1. 这是央行今年以来第六次上调银行
+                                    <select name="fill1" class="mx-2 bg-white border border-slate-300 text-blue-600 font-semibold rounded-lg px-3 py-1 focus:ring-2 focus:ring-blue-500 outline-none">
+                                        <option value="">-- 请选择 --</option>
+                                        <option value="基准利率">基准利率</option>
+                                        <option value="通货膨胀">通货膨胀</option>
+                                        <option value="信贷">信贷</option>
+                                        <option value="活期存款">活期存款</option>
+                                        <option value="偏快">偏快</option>
+                                    </select>。
+                                </label>
+                                <div id="feedback-fill1" class="text-xs mt-2 hidden"></div>
+                            </div>
+
+                            <!-- Blank 2 -->
+                            <div class="p-4 rounded-xl border border-slate-100 bg-slate-50/50">
+                                <label class="block mb-2 font-medium">
+                                    2. 此次调整中，
+                                    <select name="fill2" class="mx-2 bg-white border border-slate-300 text-blue-600 font-semibold rounded-lg px-3 py-1 focus:ring-2 focus:ring-blue-500 outline-none">
+                                        <option value="">-- 请选择 --</option>
+                                        <option value="基准利率">基准利率</option>
+                                        <option value="通货膨胀">通货膨胀</option>
+                                        <option value="信贷">信贷</option>
+                                        <option value="活期存款">活期存款</option>
+                                        <option value="偏快">偏快</option>
+                                    </select>
+                                    基准利率由现行的 0.81% 下调为 0.72%。
+                                </label>
+                                <div id="feedback-fill2" class="text-xs mt-2 hidden"></div>
+                            </div>
+
+                            <!-- Blank 3 -->
+                            <div class="p-4 rounded-xl border border-slate-100 bg-slate-50/50">
+                                <label class="block mb-2 font-medium">
+                                    3. 利率调整有利于引导货币
+                                    <select name="fill3" class="mx-2 bg-white border border-slate-300 text-blue-600 font-semibold rounded-lg px-3 py-1 focus:ring-2 focus:ring-blue-500 outline-none">
+                                        <option value="">-- 请选择 --</option>
+                                        <option value="基准利率">基准利率</option>
+                                        <option value="通货膨胀">通货膨胀</option>
+                                        <option value="信贷">信贷</option>
+                                        <option value="活期存款">活期存款</option>
+                                        <option value="偏快">偏快</option>
+                                    </select>
+                                    和投资的合理增长。
+                                </label>
+                                <div id="feedback-fill3" class="text-xs mt-2 hidden"></div>
+                            </div>
+
+                            <!-- Blank 4 -->
+                            <div class="p-4 rounded-xl border border-slate-100 bg-slate-50/50">
+                                <label class="block mb-2 font-medium">
+                                    4. 政策主要目的是防止经济增长由
+                                    <select name="fill4" class="mx-2 bg-white border border-slate-300 text-blue-600 font-semibold rounded-lg px-3 py-1 focus:ring-2 focus:ring-blue-500 outline-none">
+                                        <option value="">-- 请选择 --</option>
+                                        <option value="基准利率">基准利率</option>
+                                        <option value="通货膨胀">通货膨胀</option>
+                                        <option value="信贷">信贷</option>
+                                        <option value="活期存款">活期存款</option>
+                                        <option value="偏快">偏快</option>
+                                    </select>
+                                    转为过热。
+                                </label>
+                                <div id="feedback-fill4" class="text-xs mt-2 hidden"></div>
+                            </div>
+
+                            <!-- Blank 5 -->
+                            <div class="p-4 rounded-xl border border-slate-100 bg-slate-50/50">
+                                <label class="block mb-2 font-medium">
+                                    5. 此外，有利于防止物价出现明显的
+                                    <select name="fill5" class="mx-2 bg-white border border-slate-300 text-blue-600 font-semibold rounded-lg px-3 py-1 focus:ring-2 focus:ring-blue-500 outline-none">
+                                        <option value="">-- 请选择 --</option>
+                                        <option value="基准利率">基准利率</option>
+                                        <option value="通货膨胀">通货膨胀</option>
+                                        <option value="信贷">信贷</option>
+                                        <option value="活期存款">活期存款</option>
+                                        <option value="偏快">偏快</option>
+                                    </select>。
+                                </label>
+                                <div id="feedback-fill5" class="text-xs mt-2 hidden"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 第二部分：单项选择题 (50分) -->
+                    <div class="mb-8">
+                        <div class="flex items-center gap-2 mb-4">
+                            <span class="bg-blue-600 text-white font-bold text-xs px-2.5 py-1 rounded-md">第二部分</span>
+                            <h3 class="text-lg font-bold text-slate-800">阅读理解单项选择题（共 5 题，每题 10 分，共 50 分）</h3>
+                        </div>
+
+                        <div class="space-y-6">
+                            <!-- MCQ 1 -->
+                            <div class="p-4 rounded-xl border border-slate-100 bg-slate-50/50">
+                                <p class="font-semibold text-slate-900 mb-3">1. 调整后的金融机构人民币存贷款基准利率自何时开始执行？</p>
+                                <div class="space-y-2 text-sm">
+                                    <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-white"><input type="radio" name="mcq1" value="A" class="text-blue-600"> A) 12月20日</label>
+                                    <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-white"><input type="radio" name="mcq1" value="B" class="text-blue-600"> B) 12月21日</label>
+                                    <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-white"><input type="radio" name="mcq1" value="C" class="text-blue-600"> C) 9月15日</label>
+                                    <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-white"><input type="radio" name="mcq1" value="D" class="text-blue-600"> D) 1月1日</label>
+                                </div>
+                                <div id="feedback-mcq1" class="text-xs mt-2 hidden"></div>
+                            </div>
+
+                            <!-- MCQ 2 -->
+                            <div class="p-4 rounded-xl border border-slate-100 bg-slate-50/50">
+                                <p class="font-semibold text-slate-900 mb-3">2. 一年期存款基准利率上调了多少个百分点？</p>
+                                <div class="space-y-2 text-sm">
+                                    <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-white"><input type="radio" name="mcq2" value="A" class="text-blue-600"> A) 0.18 个百分点</label>
+                                    <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-white"><input type="radio" name="mcq2" value="B" class="text-blue-600"> B) 0.27 个百分点</label>
+                                    <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-white"><input type="radio" name="mcq2" value="C" class="text-blue-600"> C) 0.81 个百分点</label>
+                                    <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-white"><input type="radio" name="mcq2" value="D" class="text-blue-600"> D) 4.14 个百分点</label>
+                                </div>
+                                <div id="feedback-mcq2" class="text-xs mt-2 hidden"></div>
+                            </div>
+
+                            <!-- MCQ 3 -->
+                            <div class="p-4 rounded-xl border border-slate-100 bg-slate-50/50">
+                                <p class="font-semibold text-slate-900 mb-3">3. 文章中提到今年1至11月份累计居民消费价格(CPI)总水平同比上涨了多少？</p>
+                                <div class="space-y-2 text-sm">
+                                    <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-white"><input type="radio" name="mcq3" value="A" class="text-blue-600"> A) 3.87%</label>
+                                    <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-white"><input type="radio" name="mcq3" value="B" class="text-blue-600"> B) 7.29%</label>
+                                    <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-white"><input type="radio" name="mcq3" value="C" class="text-blue-600"> C) 4.6%</label>
+                                    <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-white"><input type="radio" name="mcq3" value="D" class="text-blue-600"> D) 0.72%</label>
+                                </div>
+                                <div id="feedback-mcq3" class="text-xs mt-2 hidden"></div>
+                            </div>
+
+                            <!-- MCQ 4 -->
+                            <div class="p-4 rounded-xl border border-slate-100 bg-slate-50/50">
+                                <p class="font-semibold text-slate-900 mb-3">4. 根据图二表格，12月21日调整后，半年期定期存款的年利率是多少？</p>
+                                <div class="space-y-2 text-sm">
+                                    <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-white"><input type="radio" name="mcq4" value="A" class="text-blue-600"> A) 3.33%</label>
+                                    <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-white"><input type="radio" name="mcq4" value="B" class="text-blue-600"> B) 3.78%</label>
+                                    <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-white"><input type="radio" name="mcq4" value="C" class="text-blue-600"> C) 4.14%</label>
+                                    <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-white"><input type="radio" name="mcq4" value="D" class="text-blue-600"> D) 6.57%</label>
+                                </div>
+                                <div id="feedback-mcq4" class="text-xs mt-2 hidden"></div>
+                            </div>
+
+                            <!-- MCQ 5 -->
+                            <div class="p-4 rounded-xl border border-slate-100 bg-slate-50/50">
+                                <p class="font-semibold text-slate-900 mb-3">5. 下列哪项不是本次央行调整利率的主要用意？</p>
+                                <div class="space-y-2 text-sm">
+                                    <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-white"><input type="radio" name="mcq5" value="A" class="text-blue-600"> A) 引导货币信贷和投资合理增长</label>
+                                    <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-white"><input type="radio" name="mcq5" value="B" class="text-blue-600"> B) 防止经济增长由偏快转为过热</label>
+                                    <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-white"><input type="radio" name="mcq5" value="C" class="text-blue-600"> C) 防止物价出现明显的通货膨胀</label>
+                                    <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-white"><input type="radio" name="mcq5" value="D" class="text-blue-600"> D) 大幅降低居民存款收益</label>
+                                </div>
+                                <div id="feedback-mcq5" class="text-xs mt-2 hidden"></div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- 提交按钮 -->
+            <div class="flex justify-between items-center">
+                <button onclick="switchStep(1)" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold py-3 px-6 rounded-xl transition">
+                    <i class="fa-solid fa-arrow-left"></i> 返回重新阅读
+                </button>
+                <button onclick="gradeQuiz()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg shadow-green-200 transition flex items-center gap-2">
+                    <i class="fa-solid fa-check-double"></i> 提交并查看成绩
+                </button>
+            </div>
+        </div>
+
+
+        <!-- ================= PAGE 3: 学习总结与成绩单 ================= -->
+        <div id="step-3" class="step-content">
+            <!-- 得分卡片 -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 text-center mb-8">
+                <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-blue-50 text-blue-600 mb-4 text-3xl">
+                    <i id="score-icon" class="fa-solid fa-trophy"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-slate-900 mb-1">测试完成！</h2>
+                <p class="text-sm text-slate-500 mb-6">金融中文阅读理解成绩单</p>
+
+                <div class="flex justify-center items-baseline gap-1 my-4">
+                    <span id="final-score" class="text-6xl font-extrabold text-blue-600">0</span>
+                    <span class="text-slate-400 font-bold text-xl">/ 100 分</span>
+                </div>
+
+                <p id="score-evaluation" class="text-lg font-semibold text-slate-700 mb-6">评语生成中...</p>
+
+                <!-- 分数拆分展示 -->
+                <div class="grid grid-cols-2 max-w-sm mx-auto gap-4 pt-4 border-t border-slate-100">
+                    <div class="p-3 bg-slate-50 rounded-xl">
+                        <p class="text-xs text-slate-500">选词填空得分</p>
+                        <p id="fill-score-display" class="text-lg font-bold text-slate-800">0 / 50</p>
+                    </div>
+                    <div class="p-3 bg-slate-50 rounded-xl">
+                        <p class="text-xs text-slate-500">阅读选择得分</p>
+                        <p id="mcq-score-display" class="text-lg font-bold text-slate-800">0 / 50</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 生词复习清单卡片 (在第一页查过的词) -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 mb-8">
+                <div class="border-b border-slate-100 pb-4 mb-6 flex justify-between items-center">
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                            <i class="fa-solid fa-bookmark text-amber-500"></i> 阅读时查阅的生词复习清单
+                        </h3>
+                        <p class="text-xs text-slate-500 mt-0.5">这是您在第一页阅读文章时将鼠标悬停查阅过拼音和英译的词汇</p>
+                    </div>
+                    <span id="vocab-total-badge" class="text-xs bg-amber-100 text-amber-800 font-bold px-3 py-1 rounded-full">0 个词汇</span>
+                </div>
+
+                <div id="reviewed-vocab-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- 动态注入查阅过的词汇，无查阅则显示默认提示 -->
+                </div>
+            </div>
+
+            <!-- 操作按钮组合 -->
+            <div class="flex flex-col sm:flex-row justify-center gap-4">
+                <button onclick="switchStep(1)" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl shadow-md transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-rotate-left"></i> 重新学习与阅读
+                </button>
+                <button onclick="switchStep(2)" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 px-8 rounded-xl transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-pen-to-square"></i> 重新测试
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="bg-white border-t border-slate-200 py-4 mt-auto">
+        <div class="max-w-5xl mx-auto px-4 text-center text-xs text-slate-400">
+            中文阅读学习辅助工具 &copy; 2026 · 智能悬浮生词库与理解检测
+        </div>
+    </footer>
+
+    <!-- JavaScript 交互逻辑与自动批改引擎 -->
+    <script>
+        // 记录查阅过的生词对象集合
+        const reviewedVocabMap = new Map();
+        let quizSubmitted = false;
+
+        // 正确答案配置
+        const correctAnswers = {
+            fill1: "基准利率",
+            fill2: "活期存款",
+            fill3: "信贷",
+            fill4: "偏快",
+            fill5: "通货膨胀",
+            mcq1: "B",
+            mcq2: "B",
+            mcq3: "C",
+            mcq4: "B",
+            mcq5: "D"
+        };
+
+        // 答案解析
+        const answerExplanations = {
+            fill1: "原文：‘这是央行今年以来第六次上调银行基准利率。’",
+            fill2: "原文：‘活期存款基准利率由现行的 0.81% 下调为 0.72%。’",
+            fill3: "原文：‘有利于引导货币信贷和投资的合理增长。’",
+            fill4: "原文：‘防止经济增长由偏快转为过热。’",
+            fill5: "原文：‘有利于防止物价出现明显的通货膨胀。’",
+            mcq1: "正确答案是 B。文章第一句宣布自12月21日起调整。",
+            mcq2: "正确答案是 B。一年期存款基准利率由3.87%提高到4.14%，上调0.27个百分点。",
+            mcq3: "正确答案是 C。原文：‘今年1至11月份累计，居民消费价格(CPI)总水平同比上涨 4.6%。’",
+            mcq4: "正确答案是 B。参考图二表格，12月21日调整后半年期定期存款利率为 3.78%。",
+            mcq5: "正确答案是 D。央行调息的目的是控制过热和通胀，并非为了‘大幅降低居民存款收益’。"
+        };
+
+        // 页面初始化与事件绑定
+        window.onload = function() {
+            // 为所有生词绑定鼠标悬停/聚焦事件，记录用户查阅的生词
+            const vocabElements = document.querySelectorAll('.vocab-word');
+            vocabElements.forEach(el => {
+                const trackVocab = () => {
+                    const word = el.getAttribute('data-word');
+                    const pinyin = el.getAttribute('data-pinyin');
+                    const meaning = el.getAttribute('data-meaning');
+                    if (word && !reviewedVocabMap.has(word)) {
+                        reviewedVocabMap.set(word, { pinyin, meaning });
+                        updateViewedCount();
+                    }
+                };
+                el.addEventListener('mouseenter', trackVocab);
+                el.addEventListener('touchstart', trackVocab, {passive: true});
+            });
+        };
+
+        // 更新第一页已查阅词汇数量
+        function updateViewedCount() {
+            document.getElementById('viewed-count').innerText = reviewedVocabMap.size;
+        }
+
+        // 分步卡片切换
+        function switchStep(stepNumber) {
+            // 如果尝试直接跳到第三页且尚未提交测试，给予提示
+            if (stepNumber === 3 && !quizSubmitted) {
+                alert("请先在第二页完成测试并点击【提交并查看成绩】！");
+                return;
+            }
+
+            // 切换内容区域显示
+            document.querySelectorAll('.step-content').forEach(el => el.classList.remove('active'));
+            document.getElementById(`step-${stepNumber}`).classList.add('active');
+
+            // 切换顶部导航状态
+            for (let i = 1; i <= 3; i++) {
+                const navEl = document.getElementById(`nav-step-${i}`);
+                if (i === stepNumber) {
+                    navEl.className = "flex items-center gap-1.5 text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full border border-blue-200 font-semibold cursor-pointer";
+                    navEl.querySelector('span').className = "w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px]";
+                } else {
+                    navEl.className = "flex items-center gap-1.5 text-slate-400 px-3 py-1.5 rounded-full border border-transparent cursor-pointer";
+                    navEl.querySelector('span').className = "w-5 h-5 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-[10px]";
+                }
+            }
+
+            // 如果切换到第 3 页，刷新渲染成绩单与生词列表
+            if (stepNumber === 3) {
+                renderSummaryPage();
+            }
+
+            // 滚动到顶部
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // 自动批改测试
+        function gradeQuiz() {
+            const form = document.getElementById('quiz-form');
+            let fillScore = 0;
+            let mcqScore = 0;
+
+            // 批改填空题 (5题, 每题10分)
+            for (let i = 1; i <= 5; i++) {
+                const fieldName = `fill${i}`;
+                const userAns = form[fieldName].value;
+                const correctAns = correctAnswers[fieldName];
+                const feedbackEl = document.getElementById(`feedback-${fieldName}`);
+
+                feedbackEl.classList.remove('hidden', 'text-green-600', 'text-red-500');
+
+                if (userAns === correctAns) {
+                    fillScore += 10;
+                    feedbackEl.classList.add('text-green-600');
+                    feedbackEl.innerHTML = `<i class="fa-solid fa-circle-check"></i> 回答正确！`;
+                } else {
+                    feedbackEl.classList.add('text-red-500');
+                    feedbackEl.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> 回答错误。正确答案是：<strong>${correctAns}</strong>。 ${answerExplanations[fieldName]}`;
+                }
+            }
+
+            // 批改选择题 (5题, 每题10分)
+            for (let i = 1; i <= 5; i++) {
+                const fieldName = `mcq${i}`;
+                const userAns = form[fieldName].value;
+                const correctAns = correctAnswers[fieldName];
+                const feedbackEl = document.getElementById(`feedback-${fieldName}`);
+
+                feedbackEl.classList.remove('hidden', 'text-green-600', 'text-red-500');
+
+                if (userAns === correctAns) {
+                    mcqScore += 10;
+                    feedbackEl.classList.add('text-green-600');
+                    feedbackEl.innerHTML = `<i class="fa-solid fa-circle-check"></i> 回答正确！`;
+                } else {
+                    feedbackEl.classList.add('text-red-500');
+                    feedbackEl.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> 回答错误。${answerExplanations[fieldName]}`;
+                }
+            }
+
+            quizSubmitted = true;
+            window.lastFillScore = fillScore;
+            window.lastMcqScore = mcqScore;
+            window.lastTotalScore = fillScore + mcqScore;
+
+            // 跳转到最后一页成绩单
+            switchStep(3);
+        }
+
+        // 渲染最后一页成绩与生词列表
+        function renderSummaryPage() {
+            const totalScore = window.lastTotalScore || 0;
+            const fillScore = window.lastFillScore || 0;
+            const mcqScore = window.lastMcqScore || 0;
+
+            document.getElementById('final-score').innerText = totalScore;
+            document.getElementById('fill-score-display').innerText = `${fillScore} / 50`;
+            document.getElementById('mcq-score-display').innerText = `${mcqScore} / 50`;
+
+            // 评语与图标
+            const evalEl = document.getElementById('score-evaluation');
+            const iconEl = document.getElementById('score-icon');
+
+            if (totalScore === 100) {
+                evalEl.innerText = "🌟 太棒了！完美掌握所有金融中文词汇与细节！";
+                evalEl.className = "text-lg font-semibold text-green-600 mb-6";
+                iconEl.className = "fa-solid fa-trophy text-amber-500";
+            } else if (totalScore >= 80) {
+                evalEl.innerText = "👏 优秀！对文章细节和专业词汇掌握得非常扎实！";
+                evalEl.className = "text-lg font-semibold text-blue-600 mb-6";
+                iconEl.className = "fa-solid fa-award text-blue-500";
+            } else if (totalScore >= 60) {
+                evalEl.innerText = "👍 良好！基本理解了报道内容，建议复习错题。";
+                evalEl.className = "text-lg font-semibold text-amber-600 mb-6";
+                iconEl.className = "fa-solid fa-thumbs-up text-amber-500";
+            } else {
+                evalEl.innerText = "💪 继续努力！可以回到第一页多使用悬浮提示学习生词哦。";
+                evalEl.className = "text-lg font-semibold text-red-500 mb-6";
+                iconEl.className = "fa-solid fa-book-open text-slate-400";
+            }
+
+            // 渲染动态查阅生词清单
+            const vocabContainer = document.getElementById('reviewed-vocab-container');
+            const badgeEl = document.getElementById('vocab-total-badge');
+            vocabContainer.innerHTML = '';
+
+            badgeEl.innerText = `${reviewedVocabMap.size} 个词汇`;
+
+            if (reviewedVocabMap.size === 0) {
+                vocabContainer.innerHTML = `
+                    <div class="col-span-full py-8 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                        <i class="fa-solid fa-circle-check text-green-500 text-3xl mb-2"></i>
+                        <p class="text-slate-700 font-semibold">太棒了！您在阅读过程中没有查阅任何生词。</p>
+                        <p class="text-xs text-slate-400 mt-1">这说明您的金融中文词汇量非常丰富！</p>
+                    </div>
+                `;
+            } else {
+                reviewedVocabMap.forEach((info, word) => {
+                    const card = document.createElement('div');
+                    card.className = "p-4 bg-slate-50 border border-slate-200 rounded-xl flex flex-col justify-between hover:border-blue-300 transition shadow-sm";
+                    card.innerHTML = `
+                        <div class="flex justify-between items-start mb-1">
+                            <span class="text-lg font-bold text-blue-700">${word}</span>
+                            <span class="text-xs font-mono bg-blue-100 text-blue-800 px-2 py-0.5 rounded">${info.pinyin}</span>
+                        </div>
+                        <p class="text-sm text-slate-600 mt-1 font-medium"><i class="fa-solid fa-language text-slate-400 mr-1"></i> ${info.meaning}</p>
+                    `;
+                    vocabContainer.appendChild(card);
+                });
+            }
+        }
+    </script>
+</body>
+</html>
