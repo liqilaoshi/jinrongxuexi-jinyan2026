@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>中文外贸新闻精读与理解检测 - 中国吸收外商投资</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f8fafc;
+        }
+
+        /* 悬浮提示框样式 (CSS Tooltip) */
+        .vocab-word {
+            position: relative;
+            display: inline-block;
+            color: #1d4ed8;
+            font-weight: 600;
+            border-bottom: 2px dashed #93c5fd;
+            padding: 0 2px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-radius: 2px;
+        }
+
+        .vocab-word:hover {
+            background-color: #dbeafe;
+            border-bottom-color: #2563eb;
+        }
+
+        .vocab-word .tooltip {
+            visibility: hidden;
+            opacity: 0;
+            width: max-content;
+            max-width: 260px;
+            background-color: #0f172a;
+            color: #fff;
+            text-align: center;
+            border-radius: 8px;
+            padding: 8px 12px;
+            position: absolute;
+            z-index: 50;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%) translateY(4px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25);
+            transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s;
+            pointer-events: none;
+        }
+
+        .vocab-word .tooltip::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -6px;
+            border-width: 6px;
+            border-style: solid;
+            border-color: #0f172a transparent transparent transparent;
+        }
+
+        .vocab-word:hover .tooltip,
+        .vocab-word:focus .tooltip {
+            visibility: visible;
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* 页面卡片切换平滑过渡 */
+        .step-content {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        .step-content.active {
+            display: block;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-800 flex flex-col justify-between">
+
+    <!-- 顶部导航与步骤进度条 -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+        <div class="max-w-5xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold text-lg shadow-md shadow-blue-200">
+                    <i class="fa-solid fa-chart-line"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-slate-900 leading-tight">中国外商直接投资与利用外资精读</h1>
+                    <p class="text-xs text-slate-500">经贸文章精读 · 悬浮查词 · 智能检测</p>
+                </div>
+            </div>
+
+            <!-- 分步导航器 -->
+            <div class="flex items-center gap-2 text-xs font-medium">
+                <div id="nav-step-1" class="flex items-center gap-1.5 text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full border border-blue-200 font-semibold cursor-pointer" onclick="switchStep(1)">
+                    <span class="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px]">1</span>
+                    <span>文章精读</span>
+                </div>
+                <i class="fa-solid fa-chevron-right text-slate-300 text-[10px]"></i>
+                <div id="nav-step-2" class="flex items-center gap-1.5 text-slate-400 px-3 py-1.5 rounded-full border border-transparent cursor-pointer" onclick="switchStep(2)">
+                    <span class="w-5 h-5 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-[10px]">2</span>
+                    <span>理解测试</span>
+                </div>
+                <i class="fa-solid fa-chevron-right text-slate-300 text-[10px]"></i>
+                <div id="nav-step-3" class="flex items-center gap-1.5 text-slate-400 px-3 py-1.5 rounded-full border border-transparent cursor-pointer" onclick="switchStep(3)">
+                    <span class="w-5 h-5 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-[10px]">3</span>
+                    <span>成绩与词汇</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主体区域 -->
+    <main class="max-w-5xl mx-auto w-full px-4 py-8 flex-grow">
+
+        <!-- ================= PAGE 1: 文章阅读与悬浮词汇卡 ================= -->
+        <div id="step-1" class="step-content active">
+            <!-- 阅读提示 -->
+            <div class="bg-blue-50 border border-blue-200 rounded-2xl p-4 mb-6 flex items-start gap-3 text-blue-900 shadow-sm">
+                <i class="fa-solid fa-circle-info text-blue-600 mt-0.5 text-lg"></i>
+                <div class="text-sm">
+                    <p class="font-bold mb-0.5">阅读指引：</p>
+                    <p>将鼠标悬停（或点击）在带<span class="text-blue-600 font-semibold underline decoration-dashed">蓝色虚线</span>的经贸重点词汇上，即可自动显示拼音与英文翻译。系统会自动将您查阅过的生词记录到最后一页的复习本中。</p>
+                </div>
+            </div>
+
+            <!-- 图文卡片 -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 mb-8">
+                <!-- 文章标题与查词计数 -->
+                <div class="border-b border-slate-100 pb-4 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2">
+                        <i class="fa-regular fa-newspaper text-blue-600"></i> 中国吸收外商直接投资保持稳定
+                    </h2>
+                    <div class="text-xs text-slate-600 bg-slate-100 px-3 py-1.5 rounded-full self-start sm:self-auto flex items-center gap-1.5">
+                        <i class="fa-solid fa-eye text-blue-500"></i> 已查阅生词: <span id="viewed-count" class="font-bold text-blue-600">0</span> 个
+                    </div>
+                </div>
+
+                <!-- 文章正文 (精确提取自提供的图片) -->
+                <div class="text-slate-800 text-lg leading-relaxed sm:leading-loose space-y-6 text-justify">
+                    <p>
+                        据中国<span class="vocab-word" data-word="商务部" data-pinyin="shāng wù bù" data-meaning="Ministry of Commerce">商务部<span class="tooltip"><span class="block text-amber-300 text-xs font-normal">shāng wù bù</span><span class="block text-sm font-semibold mt-0.5">Ministry of Commerce</span></span></span><span class="vocab-word" data-word="投资促进" data-pinyin="tóu zī cù jìn" data-meaning="investment promotion">投资促进<span class="tooltip"><span class="block text-amber-300 text-xs font-normal">tóu zī cù jìn</span><span class="block text-sm font-semibold mt-0.5">investment promotion</span></span></span>事务局负责人说，在世界经济<span class="vocab-word" data-word="持续低迷" data-pinyin="chí xù dī mí" data-meaning="continued slump / downturn">持续低迷<span class="tooltip"><span class="block text-amber-300 text-xs font-normal">chí xù dī mí</span><span class="block text-sm font-semibold mt-0.5">continued slump / downturn</span></span></span>、<span class="vocab-word" data-word="跨国投资" data-pinyin="kuà guó tóu zī" data-meaning="transnational investment">跨国投资<span class="tooltip"><span class="block text-amber-300 text-xs font-normal">kuà guó tóu zī</span><span class="block text-sm font-semibold mt-0.5">transnational investment</span></span></span>大幅下降的情况下，中国<span class="vocab-word" data-word="吸收" data-pinyin="xī shōu" data-meaning="absorb / attract">吸收<span class="tooltip"><span class="block text-amber-300 text-xs font-normal">xī shōu</span><span class="block text-sm font-semibold mt-0.5">absorb / attract</span></span></span>外商<span class="vocab-word" data-word="直接投资" data-pinyin="zhí jiē tóu zī" data-meaning="direct investment">直接投资<span class="tooltip"><span class="block text-amber-300 text-xs font-normal">zhí jiē tóu zī</span><span class="block text-sm font-semibold mt-0.5">direct investment</span></span></span>依然保持稳定，中国以 610 亿美元的外国直接投资，继续成为发展中国家的最大<span class="vocab-word" data-word="外资流入国" data-pinyin="wài zī liú rù guó" data-meaning="foreign capital inflow country">外资流入国<span class="tooltip"><span class="block text-amber-300 text-xs font-normal">wài zī liú rù guó</span><span class="block text-sm font-semibold mt-0.5">foreign capital inflow country</span></span></span>，在全球范围内仅次于美国和英国，连续 12 年实际使用外资金额居发展中国家和地区<span class="vocab-word" data-word="首位" data-pinyin="shǒu wèi" data-meaning="first place / top position">首位<span class="tooltip"><span class="block text-amber-300 text-xs font-normal">shǒu wèi</span><span class="block text-sm font-semibold mt-0.5">first place / top position</span></span></span>。
+                    </p>
+                    <p>
+                        据介绍，截至 2005 年 8 月底，共有来自近 200 个国家和地区的投资者在华投资，<span class="vocab-word" data-word="累计" data-pinyin="lěi jì" data-meaning="cumulatively / total count">累计<span class="tooltip"><span class="block text-amber-300 text-xs font-normal">lěi jì</span><span class="block text-sm font-semibold mt-0.5">cumulatively / total count</span></span></span>投入资金 6000 亿美元，企业超过 53 万家。目前，<span class="vocab-word" data-word="留存注册" data-pinyin="liú cún zhù cè" data-meaning="retained & registered">留存注册<span class="tooltip"><span class="block text-amber-300 text-xs font-normal">liú cún zhù cè</span><span class="block text-sm font-semibold mt-0.5">retained & registered</span></span></span>外商投资企业约 28 万家，外资 2455 亿美元。
+                    </p>
+                    <p>
+                        据有关统计，2009 年 2 月，中国<span class="vocab-word" data-word="新批设立" data-pinyin="xīn pī shè lì" data-meaning="newly approved & established">新批设立<span class="tooltip"><span class="block text-amber-300 text-xs font-normal">xīn pī shè lì</span><span class="block text-sm font-semibold mt-0.5">newly approved & established</span></span></span>外商投资企业 1265 家，<span class="vocab-word" data-word="同比下降" data-pinyin="tóng bǐ xià jiàng" data-meaning="year-on-year decrease">同比下降<span class="tooltip"><span class="block text-amber-300 text-xs font-normal">tóng bǐ xià jiàng</span><span class="block text-sm font-semibold mt-0.5">year-on-year decrease</span></span></span> 13%；实际使用外资金额 58.33 亿美元，同比下降 15.81%。
+                    </p>
+                </div>
+            </div>
+
+            <!-- 数据要点卡片 (辅助学习) -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                <div class="p-4 bg-white rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center text-lg font-bold">
+                        <i class="fa-solid fa-globe"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs text-slate-500">外国直接投资额</p>
+                        <p class="text-base font-bold text-slate-800">610 亿美元</p>
+                    </div>
+                </div>
+                <div class="p-4 bg-white rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center text-lg font-bold">
+                        <i class="fa-solid fa-award"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs text-slate-500">发展中国家排名</p>
+                        <p class="text-base font-bold text-slate-800">连续 12 年居首位</p>
+                    </div>
+                </div>
+                <div class="p-4 bg-white rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center text-lg font-bold">
+                        <i class="fa-solid fa-building-user"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs text-slate-500">截至2005年8月在华企业</p>
+                        <p class="text-base font-bold text-slate-800">超过 53 万家</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 下一步按钮 -->
+            <div class="flex justify-end">
+                <button onclick="switchStep(2)" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg shadow-blue-200 transition duration-200 flex items-center gap-2">
+                    阅读完毕，开始理解测试 <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+
+
+        <!-- ================= PAGE 2: 自动批改测验 ================= -->
+        <div id="step-2" class="step-content">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 mb-8">
+                <div class="border-b border-slate-100 pb-4 mb-6 flex justify-between items-center">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-900">阅读理解检测（满分 100 分）</h2>
+                        <p class="text-xs text-slate-500 mt-1">包含选词填空与单项选择题，完成后点击底部提交按钮自动批改。</p>
+                    </div>
+                    <span class="text-xs bg-amber-50 text-amber-700 border border-amber-200 px-3 py-1.5 rounded-full font-semibold">
+                        <i class="fa-solid fa-clock"></i> 不限时间
+                    </span>
+                </div>
+
+                <form id="quiz-form">
+                    <!-- 第一部分：选词填空题 (50分) -->
+                    <div class="mb-10">
+                        <div class="flex items-center gap-2 mb-4">
+                            <span class="bg-blue-600 text-white font-bold text-xs px-2.5 py-1 rounded-md">第一部分</span>
+                            <h3 class="text-lg font-bold text-slate-800">选词填空题（共 5 题，每题 10 分，共 50 分）</h3>
+                        </div>
+
+                        <!-- 词汇备选框 -->
+                        <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-6">
+                            <p class="text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">可选词汇库：</p>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="bg-white border border-slate-300 text-slate-700 text-sm px-3 py-1 rounded-lg font-medium shadow-sm">持续低迷</span>
+                                <span class="bg-white border border-slate-300 text-slate-700 text-sm px-3 py-1 rounded-lg font-medium shadow-sm">吸收</span>
+                                <span class="bg-white border border-slate-300 text-slate-700 text-sm px-3 py-1 rounded-lg font-medium shadow-sm">首位</span>
+                                <span class="bg-white border border-slate-300 text-slate-700 text-sm px-3 py-1 rounded-lg font-medium shadow-sm">累计</span>
+                                <span class="bg-white border border-slate-300 text-slate-700 text-sm px-3 py-1 rounded-lg font-medium shadow-sm">同比</span>
+                            </div>
+                        </div>
+
+                        <div class="space-y-6 text-slate-700 leading-relaxed">
+                            <!-- Blank 1 -->
+                            <div class="p-4 rounded-xl border border-slate-100 bg-slate-50/50">
+                                <label class="block mb-2 font-medium">
+                                    1. 在世界经济
+                                    <select name="fill1" class="mx-2 bg-white border border-slate-300 text-blue-600 font-semibold rounded-lg px-3 py-1 focus:ring-2 focus:ring-blue-500 outline-none">
+                                        <option value="">-- 请选择 --</option>
+                                        <option value="持续低迷">持续低迷</option>
+                                        <option value="吸收">吸收</option>
+                                        <option value="首位">首位</option>
+                                        <option value="累计">累计</option>
+                                        <option value="同比">同比</option>
+                                    </select>
+                                    、跨国投资大幅下降的情况下，中国外资流入依然稳定。
+                                </label>
+                                <div id="feedback-fill1" class="text-xs mt-2 hidden"></div>
+                            </div>
+
+                            <!-- Blank 2 -->
+                            <div class="p-4 rounded-xl border border-slate-100 bg-slate-50/50">
+                                <label class="block mb-2 font-medium">
+                                    2. 中国
+                                    <select name="fill2" class="mx-2 bg-white border border-slate-300 text-blue-600 font-semibold rounded-lg px-3 py-1 focus:ring-2 focus:ring-blue-500 outline-none">
+                                        <option value="">-- 请选择 --</option>
+                                        <option value="持续低迷">持续低迷</option>
+                                        <option value="吸收">吸收</option>
+                                        <option value="首位">首位</option>
+                                        <option value="累计">累计</option>
+                                        <option value="同比">同比</option>
+                                    </select>
+                                    外商直接投资依然保持稳定，以610亿美元的投资额成为主要流入国。
+                                </label>
+                                <div id="feedback-fill2" class="text-xs mt-2 hidden"></div>
+                            </div>
+
+                            <!-- Blank 3 -->
+                            <div class="p-4 rounded-xl border border-slate-100 bg-slate-50/50">
+                                <label class="block mb-2 font-medium">
+                                    3. 中国连续 12 年实际使用外资金额居发展中国家和地区
+                                    <select name="fill3" class="mx-2 bg-white border border-slate-300 text-blue-600 font-semibold rounded-lg px-3 py-1 focus:ring-2 focus:ring-blue-500 outline-none">
+                                        <option value="">-- 请选择 --</option>
+                                        <option value="持续低迷">持续低迷</option>
+                                        <option value="吸收">吸收</option>
+                                        <option value="首位">首位</option>
+                                        <option value="累计">累计</option>
+                                        <option value="同比">同比</option>
+                                    </select>。
+                                </label>
+                                <div id="feedback-fill3" class="text-xs mt-2 hidden"></div>
+                            </div>
+
+                            <!-- Blank 4 -->
+                            <div class="p-4 rounded-xl border border-slate-100 bg-slate-50/50">
+                                <label class="block mb-2 font-medium">
+                                    4. 截至 2005 年 8 月底，来自近 200 个国家和地区的投资者在华
+                                    <select name="fill4" class="mx-2 bg-white border border-slate-300 text-blue-600 font-semibold rounded-lg px-3 py-1 focus:ring-2 focus:ring-blue-500 outline-none">
+                                        <option value="">-- 请选择 --</option>
+                                        <option value="持续低迷">持续低迷</option>
+                                        <option value="吸收">吸收</option>
+                                        <option value="首位">首位</option>
+                                        <option value="累计">累计</option>
+                                        <option value="同比">同比</option>
+                                    </select>
+                                    投入资金 6000 亿美元。
+                                </label>
+                                <div id="feedback-fill4" class="text-xs mt-2 hidden"></div>
+                            </div>
+
+                            <!-- Blank 5 -->
+                            <div class="p-4 rounded-xl border border-slate-100 bg-slate-50/50">
+                                <label class="block mb-2 font-medium">
+                                    5. 2009 年 2 月，中国新批设立外商投资企业 1265 家，
+                                    <select name="fill5" class="mx-2 bg-white border border-slate-300 text-blue-600 font-semibold rounded-lg px-3 py-1 focus:ring-2 focus:ring-blue-500 outline-none">
+                                        <option value="">-- 请选择 --</option>
+                                        <option value="持续低迷">持续低迷</option>
+                                        <option value="吸收">吸收</option>
+                                        <option value="首位">首位</option>
+                                        <option value="累计">累计</option>
+                                        <option value="同比">同比</option>
+                                    </select>
+                                    下降 13%。
+                                </label>
+                                <div id="feedback-fill5" class="text-xs mt-2 hidden"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 第二部分：单项选择题 (50分) -->
+                    <div class="mb-8">
+                        <div class="flex items-center gap-2 mb-4">
+                            <span class="bg-blue-600 text-white font-bold text-xs px-2.5 py-1 rounded-md">第二部分</span>
+                            <h3 class="text-lg font-bold text-slate-800">阅读理解单项选择题（共 5 题，每题 10 分，共 50 分）</h3>
+                        </div>
+
+                        <div class="space-y-6">
+                            <!-- MCQ 1 -->
+                            <div class="p-4 rounded-xl border border-slate-100 bg-slate-50/50">
+                                <p class="font-semibold text-slate-900 mb-3">1. 全球范围内，中国外国直接投资流入量仅次于哪两个国家？</p>
+                                <div class="space-y-2 text-sm">
+                                    <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-white"><input type="radio" name="mcq1" value="A" class="text-blue-600"> A) 日本和德国</label>
+                                    <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-white"><input type="radio" name="mcq1" value="B" class="text-blue-600"> B) 美国和英国</label>
+                                    <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-white"><input type="radio" name="mcq1" value="C" class="text-blue-600"> C) 法国和加拿大</label>
+                                    <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-white"><input type="radio" name="mcq1" value="D" class="text-blue-600"> D) 德国和英国</label>
+                                </div>
+                                <div id="feedback-mcq1" class="text-xs mt-2 hidden"></div>
+                            </div>
+
+                            <!-- MCQ 2 -->
+                            <div class="p-4 rounded-xl border border-slate-100 bg-slate-50/50">
+                                <p class="font-semibold text-slate-900 mb-3">2. 截至 2005 年 8 月底，在华投资的外商企业累计超过了多少家？</p>
+                                <div class="space-y-2 text-sm">
+                                    <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-white"><input type="radio" name="mcq2" value="A" class="text-blue-600"> A) 28 万家</label>
+                                    <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-white"><input type="radio" name="mcq2" value="B" class="text-blue-600"> B) 200 家</label>
+                                    <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-white"><input type="radio" name="mcq2" value="C" class="text-blue-600"> C) 53 万家</label>
+                                    <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-white"><input type="radio" name="mcq2" value="D" class="text-blue-600"> D) 1265 家</label>
+                                </div>
+                                <div id="feedback-mcq2" class="text-xs mt-2 hidden"></div>
+                            </div>
+
+                            <!-- MCQ 3 -->
+                            <div class="p-4 rounded-xl border border-slate-100 bg-slate-50/50">
+                                <p class="font-semibold text-slate-900 mb-3">3. 文章提及中国实际使用外资金额连续多少年居发展中国家和地区首位？</p>
+                                <div class="space-y-2 text-sm">
+                                    <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-white"><input type="radio" name="mcq3" value="A" class="text-blue-600"> A) 5 年</label>
+                                    <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-white"><input type="radio" name="mcq3" value="B" class="text-blue-600"> B) 10 年</label>
+                                    <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-white"><input type="radio" name="mcq3" value="C" class="text-blue-600"> C) 12 年</label>
+                                    <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-white"><input type="radio" name="mcq3" value="D" class="text-blue-600"> D) 15 年</label>
+                                </div>
+                                <div id="feedback-mcq3" class="text-xs mt-2 hidden"></div>
+                            </div>
+
+                            <!-- MCQ 4 -->
+                            <div class="p-4 rounded-xl border border-slate-100 bg-slate-50/50">
+                                <p class="font-semibold text-slate-900 mb-3">4. 2009 年 2 月，中国实际使用外资金额为多少，且同比下降了多少？</p>
+                                <div class="space-y-2 text-sm">
+                                    <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-white"><input type="radio" name="mcq4" value="A" class="text-blue-600"> A) 610 亿美元，同比下降 13%</label>
+                                    <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-white"><input type="radio" name="mcq4" value="B" class="text-blue-600"> B) 58.33 亿美元，同比下降 15.81%</label>
+                                    <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-white"><input type="radio" name="mcq4" value="C" class="text-blue-600"> C) 2455 亿美元，同比下降 15.81%</label>
+                                    <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-white"><input type="radio" name="mcq4" value="D" class="text-blue-600"> D) 58.33 亿美元，同比下降 13%</label>
+                                </div>
+                                <div id="feedback-mcq4" class="text-xs mt-2 hidden"></div>
+                            </div>
+
+                            <!-- MCQ 5 -->
+                            <div class="p-4 rounded-xl border border-slate-100 bg-slate-50/50">
+                                <p class="font-semibold text-slate-900 mb-3">5. 根据文章，截至 2005 年 8 月底，目前留存注册外商投资企业约有多少家？</p>
+                                <div class="space-y-2 text-sm">
+                                    <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-white"><input type="radio" name="mcq5" value="A" class="text-blue-600"> A) 约 53 万家</label>
+                                    <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-white"><input type="radio" name="mcq5" value="B" class="text-blue-600"> B) 约 200 家</label>
+                                    <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-white"><input type="radio" name="mcq5" value="C" class="text-blue-600"> C) 约 28 万家</label>
+                                    <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-white"><input type="radio" name="mcq5" value="D" class="text-blue-600"> D) 约 1265 家</label>
+                                </div>
+                                <div id="feedback-mcq5" class="text-xs mt-2 hidden"></div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- 提交按钮 -->
+            <div class="flex justify-between items-center">
+                <button onclick="switchStep(1)" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold py-3 px-6 rounded-xl transition">
+                    <i class="fa-solid fa-arrow-left"></i> 返回重新阅读
+                </button>
+                <button onclick="gradeQuiz()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg shadow-green-200 transition flex items-center gap-2">
+                    <i class="fa-solid fa-check-double"></i> 提交并查看成绩
+                </button>
+            </div>
+        </div>
+
+
+        <!-- ================= PAGE 3: 学习总结与成绩单 ================= -->
+        <div id="step-3" class="step-content">
+            <!-- 得分卡片 -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 text-center mb-8">
+                <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-blue-50 text-blue-600 mb-4 text-3xl">
+                    <i id="score-icon" class="fa-solid fa-trophy"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-slate-900 mb-1">测试完成！</h2>
+                <p class="text-sm text-slate-500 mb-6">经贸中文阅读理解成绩单</p>
+
+                <div class="flex justify-center items-baseline gap-1 my-4">
+                    <span id="final-score" class="text-6xl font-extrabold text-blue-600">0</span>
+                    <span class="text-slate-400 font-bold text-xl">/ 100 分</span>
+                </div>
+
+                <p id="score-evaluation" class="text-lg font-semibold text-slate-700 mb-6">评语生成中...</p>
+
+                <!-- 分数拆分展示 -->
+                <div class="grid grid-cols-2 max-w-sm mx-auto gap-4 pt-4 border-t border-slate-100">
+                    <div class="p-3 bg-slate-50 rounded-xl">
+                        <p class="text-xs text-slate-500">选词填空得分</p>
+                        <p id="fill-score-display" class="text-lg font-bold text-slate-800">0 / 50</p>
+                    </div>
+                    <div class="p-3 bg-slate-50 rounded-xl">
+                        <p class="text-xs text-slate-500">阅读选择得分</p>
+                        <p id="mcq-score-display" class="text-lg font-bold text-slate-800">0 / 50</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 生词复习清单卡片 (在第一页查过的词) -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 mb-8">
+                <div class="border-b border-slate-100 pb-4 mb-6 flex justify-between items-center">
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                            <i class="fa-solid fa-bookmark text-amber-500"></i> 阅读时查阅的生词复习清单
+                        </h3>
+                        <p class="text-xs text-slate-500 mt-0.5">这是您在第一页阅读文章时将鼠标悬停查阅过拼音和英译的词汇</p>
+                    </div>
+                    <span id="vocab-total-badge" class="text-xs bg-amber-100 text-amber-800 font-bold px-3 py-1 rounded-full">0 个词汇</span>
+                </div>
+
+                <div id="reviewed-vocab-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- 动态注入查阅过的词汇，无查阅则显示默认提示 -->
+                </div>
+            </div>
+
+            <!-- 操作按钮组合 -->
+            <div class="flex flex-col sm:flex-row justify-center gap-4">
+                <button onclick="switchStep(1)" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl shadow-md transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-rotate-left"></i> 重新学习与阅读
+                </button>
+                <button onclick="switchStep(2)" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 px-8 rounded-xl transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-pen-to-square"></i> 重新测试
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="bg-white border-t border-slate-200 py-4 mt-auto">
+        <div class="max-w-5xl mx-auto px-4 text-center text-xs text-slate-400">
+            中文阅读学习辅助工具 &copy; 2026 · 智能悬浮生词库与理解检测
+        </div>
+    </footer>
+
+    <!-- JavaScript 交互逻辑与自动批改引擎 -->
+    <script>
+        // 记录查阅过的生词对象集合
+        const reviewedVocabMap = new Map();
+        let quizSubmitted = false;
+
+        // 第二篇文章正确答案配置
+        const correctAnswers = {
+            fill1: "持续低迷",
+            fill2: "吸收",
+            fill3: "首位",
+            fill4: "累计",
+            fill5: "同比",
+            mcq1: "B",
+            mcq2: "C",
+            mcq3: "C",
+            mcq4: "B",
+            mcq5: "C"
+        };
+
+        // 答案解析
+        const answerExplanations = {
+            fill1: "原文：‘在世界经济持续低迷、跨国投资大幅下降的情况下...’",
+            fill2: "原文：‘中国吸收外商直接投资依然保持稳定...’",
+            fill3: "原文：‘连续 12 年实际使用外资金额居发展中国家和地区首位。’",
+            fill4: "原文：‘共有来自近 200 个国家和地区的投资者在华投资，累计投入资金 6000 亿美元...’",
+            fill5: "原文：‘2009 年 2 月，中国新批设立外商投资企业 1265 家，同比下降 13%...’",
+            mcq1: "正确答案是 B。原文：‘在全球范围内仅次于美国和英国’。",
+            mcq2: "正确答案是 C。原文：‘截至 2005 年 8 月底 ... 累计投入资金 6000 亿美元，企业超过 53 万家。’",
+            mcq3: "正确答案是 C。原文：‘连续 12 年实际使用外资金额居发展中国家和地区首位。’",
+            mcq4: "正确答案是 B。原文：‘实际使用外资金额 58.33 亿美元，同比下降 15.81%。’",
+            mcq5: "正确答案是 C。原文：‘目前，留存注册外商投资企业约 28 万家’。"
+        };
+
+        // 页面初始化与事件绑定
+        window.onload = function() {
+            // 为所有生词绑定鼠标悬停/聚焦事件，记录用户查阅的生词
+            const vocabElements = document.querySelectorAll('.vocab-word');
+            vocabElements.forEach(el => {
+                const trackVocab = () => {
+                    const word = el.getAttribute('data-word');
+                    const pinyin = el.getAttribute('data-pinyin');
+                    const meaning = el.getAttribute('data-meaning');
+                    if (word && !reviewedVocabMap.has(word)) {
+                        reviewedVocabMap.set(word, { pinyin, meaning });
+                        updateViewedCount();
+                    }
+                };
+                el.addEventListener('mouseenter', trackVocab);
+                el.addEventListener('touchstart', trackVocab, {passive: true});
+            });
+        };
+
+        // 更新第一页已查阅词汇数量
+        function updateViewedCount() {
+            document.getElementById('viewed-count').innerText = reviewedVocabMap.size;
+        }
+
+        // 分步卡片切换
+        function switchStep(stepNumber) {
+            // 如果尝试直接跳到第三页且尚未提交测试，给予提示
+            if (stepNumber === 3 && !quizSubmitted) {
+                alert("请先在第二页完成测试并点击【提交并查看成绩】！");
+                return;
+            }
+
+            // 切换内容区域显示
+            document.querySelectorAll('.step-content').forEach(el => el.classList.remove('active'));
+            document.getElementById(`step-${stepNumber}`).classList.add('active');
+
+            // 切换顶部导航状态
+            for (let i = 1; i <= 3; i++) {
+                const navEl = document.getElementById(`nav-step-${i}`);
+                if (i === stepNumber) {
+                    navEl.className = "flex items-center gap-1.5 text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full border border-blue-200 font-semibold cursor-pointer";
+                    navEl.querySelector('span').className = "w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px]";
+                } else {
+                    navEl.className = "flex items-center gap-1.5 text-slate-400 px-3 py-1.5 rounded-full border border-transparent cursor-pointer";
+                    navEl.querySelector('span').className = "w-5 h-5 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-[10px]";
+                }
+            }
+
+            // 如果切换到第 3 页，刷新渲染成绩单与生词列表
+            if (stepNumber === 3) {
+                renderSummaryPage();
+            }
+
+            // 滚动到顶部
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // 自动批改测试
+        function gradeQuiz() {
+            const form = document.getElementById('quiz-form');
+            let fillScore = 0;
+            let mcqScore = 0;
+
+            // 批改填空题 (5题, 每题10分)
+            for (let i = 1; i <= 5; i++) {
+                const fieldName = `fill${i}`;
+                const userAns = form[fieldName].value;
+                const correctAns = correctAnswers[fieldName];
+                const feedbackEl = document.getElementById(`feedback-${fieldName}`);
+
+                feedbackEl.classList.remove('hidden', 'text-green-600', 'text-red-500');
+
+                if (userAns === correctAns) {
+                    fillScore += 10;
+                    feedbackEl.classList.add('text-green-600');
+                    feedbackEl.innerHTML = `<i class="fa-solid fa-circle-check"></i> 回答正确！`;
+                } else {
+                    feedbackEl.classList.add('text-red-500');
+                    feedbackEl.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> 回答错误。正确答案是：<strong>${correctAns}</strong>。 ${answerExplanations[fieldName]}`;
+                }
+            }
+
+            // 批改选择题 (5题, 每题10分)
+            for (let i = 1; i <= 5; i++) {
+                const fieldName = `mcq${i}`;
+                const userAns = form[fieldName].value;
+                const correctAns = correctAnswers[fieldName];
+                const feedbackEl = document.getElementById(`feedback-${fieldName}`);
+
+                feedbackEl.classList.remove('hidden', 'text-green-600', 'text-red-500');
+
+                if (userAns === correctAns) {
+                    mcqScore += 10;
+                    feedbackEl.classList.add('text-green-600');
+                    feedbackEl.innerHTML = `<i class="fa-solid fa-circle-check"></i> 回答正确！`;
+                } else {
+                    feedbackEl.classList.add('text-red-500');
+                    feedbackEl.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> 回答错误。${answerExplanations[fieldName]}`;
+                }
+            }
+
+            quizSubmitted = true;
+            window.lastFillScore = fillScore;
+            window.lastMcqScore = mcqScore;
+            window.lastTotalScore = fillScore + mcqScore;
+
+            // 跳转到最后一页成绩单
+            switchStep(3);
+        }
+
+        // 渲染最后一页成绩与生词列表
+        function renderSummaryPage() {
+            const totalScore = window.lastTotalScore || 0;
+            const fillScore = window.lastFillScore || 0;
+            const mcqScore = window.lastMcqScore || 0;
+
+            document.getElementById('final-score').innerText = totalScore;
+            document.getElementById('fill-score-display').innerText = `${fillScore} / 50`;
+            document.getElementById('mcq-score-display').innerText = `${mcqScore} / 50`;
+
+            // 评语与图标
+            const evalEl = document.getElementById('score-evaluation');
+            const iconEl = document.getElementById('score-icon');
+
+            if (totalScore === 100) {
+                evalEl.innerText = "🌟 完美！您准确理解了经贸新闻的所有关键数据与词汇！";
+                evalEl.className = "text-lg font-semibold text-green-600 mb-6";
+                iconEl.className = "fa-solid fa-trophy text-amber-500";
+            } else if (totalScore >= 80) {
+                evalEl.innerText = "👏 优秀！对文章细节和经贸专业术语掌握得很棒！";
+                evalEl.className = "text-lg font-semibold text-blue-600 mb-6";
+                iconEl.className = "fa-solid fa-award text-blue-500";
+            } else if (totalScore >= 60) {
+                evalEl.innerText = "👍 良好！基本理解了报道内容，注意复习数字和对比题。";
+                evalEl.className = "text-lg font-semibold text-amber-600 mb-6";
+                iconEl.className = "fa-solid fa-thumbs-up text-amber-500";
+            } else {
+                evalEl.innerText = "💪 再接再厉！建议重新回到第一页查阅悬浮生词再试一次。";
+                evalEl.className = "text-lg font-semibold text-red-500 mb-6";
+                iconEl.className = "fa-solid fa-book-open text-slate-400";
+            }
+
+            // 渲染动态查阅生词清单
+            const vocabContainer = document.getElementById('reviewed-vocab-container');
+            const badgeEl = document.getElementById('vocab-total-badge');
+            vocabContainer.innerHTML = '';
+
+            badgeEl.innerText = `${reviewedVocabMap.size} 个词汇`;
+
+            if (reviewedVocabMap.size === 0) {
+                vocabContainer.innerHTML = `
+                    <div class="col-span-full py-8 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                        <i class="fa-solid fa-circle-check text-green-500 text-3xl mb-2"></i>
+                        <p class="text-slate-700 font-semibold">太棒了！您在阅读过程中没有查阅任何生词。</p>
+                        <p class="text-xs text-slate-400 mt-1">这说明您的经贸中文词汇量非常丰富！</p>
+                    </div>
+                `;
+            } else {
+                reviewedVocabMap.forEach((info, word) => {
+                    const card = document.createElement('div');
+                    card.className = "p-4 bg-slate-50 border border-slate-200 rounded-xl flex flex-col justify-between hover:border-blue-300 transition shadow-sm";
+                    card.innerHTML = `
+                        <div class="flex justify-between items-start mb-1">
+                            <span class="text-lg font-bold text-blue-700">${word}</span>
+                            <span class="text-xs font-mono bg-blue-100 text-blue-800 px-2 py-0.5 rounded">${info.pinyin}</span>
+                        </div>
+                        <p class="text-sm text-slate-600 mt-1 font-medium"><i class="fa-solid fa-language text-slate-400 mr-1"></i> ${info.meaning}</p>
+                    `;
+                    vocabContainer.appendChild(card);
+                });
+            }
+        }
+    </script>
+</body>
+</html>
