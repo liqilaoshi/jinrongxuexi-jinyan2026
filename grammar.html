@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高级商务汉语句型互动练习 - 新丝路商务汉语</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f8fafc;
+        }
+
+        /* 词语点击/悬浮提示框样式 (Interactive Tooltip) */
+        .tooltip-word {
+            position: relative;
+            display: inline-block;
+            color: #1d4ed8;
+            font-weight: 600;
+            border-bottom: 2px dashed #93c5fd;
+            padding: 0 3px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-radius: 4px;
+        }
+
+        .tooltip-word:hover {
+            background-color: #dbeafe;
+            border-bottom-color: #2563eb;
+        }
+
+        .tooltip-word .tooltip-box {
+            visibility: hidden;
+            opacity: 0;
+            width: max-content;
+            max-width: 280px;
+            background-color: #0f172a;
+            color: #fff;
+            text-align: left;
+            border-radius: 8px;
+            padding: 8px 12px;
+            position: absolute;
+            z-index: 50;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%) translateY(4px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25);
+            transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s;
+            pointer-events: none;
+        }
+
+        .tooltip-word .tooltip-box::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -6px;
+            border-width: 6px;
+            border-style: solid;
+            border-color: #0f172a transparent transparent transparent;
+        }
+
+        .tooltip-word:hover .tooltip-box,
+        .tooltip-word:focus .tooltip-box {
+            visibility: visible;
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* 音波动画 */
+        .wave-bar {
+            display: inline-block;
+            width: 4px;
+            height: 14px;
+            margin: 0 2px;
+            background-color: #3b82f6;
+            border-radius: 2px;
+            animation: wave 1s infinite ease-in-out;
+        }
+        .wave-bar:nth-child(2) { animation-delay: 0.1s; }
+        .wave-bar:nth-child(3) { animation-delay: 0.2s; }
+        .wave-bar:nth-child(4) { animation-delay: 0.3s; }
+        .wave-bar:nth-child(5) { animation-delay: 0.4s; }
+        @keyframes wave {
+            0%, 100% { height: 8px; }
+            50% { height: 24px; }
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-800 flex flex-col justify-between">
+
+    <!-- 顶部导航与分步控制器 -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+        <div class="max-w-5xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold text-lg shadow-md shadow-blue-200">
+                    <i class="fa-solid fa-code-compare"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-slate-900 leading-tight">高级商务汉语句型交互训练</h1>
+                    <p class="text-xs text-slate-500">语法解析 · 智能交互答题 · 多维提示</p>
+                </div>
+            </div>
+            
+            <div class="text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1.5 rounded-full flex items-center gap-1.5">
+                <i class="fa-solid fa-circle-question"></i> 点击句中词语可获得拼音与解释
+            </div>
+        </div>
+    </header>
+
+    <!-- 主体区域 -->
+    <main class="max-w-5xl mx-auto w-full px-4 py-8 flex-grow space-y-8">
+
+        <!-- 指引卡片 -->
+        <div class="bg-blue-50 border border-blue-200 rounded-2xl p-4 flex items-start gap-3 text-blue-900 shadow-sm">
+            <i class="fa-solid fa-lightbulb text-blue-600 mt-0.5 text-lg"></i>
+            <div class="text-sm">
+                <p class="font-bold mb-0.5">练习说明：</p>
+                <p>下面展示了 4 组经贸核心句型结构。请先认真阅读例句，然后利用括号中的词语完成对话。您可以自由选择【打字输入】或点击【语音输入】朗读答案，并随时点击“查看参考答案”进行比对！</p>
+            </div>
+        </div>
+
+        <!-- ================= 句型 1 ================= -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 space-y-6">
+            <!-- 句型头部 -->
+            <div class="border-b border-slate-100 pb-4">
+                <div class="flex items-center gap-2 mb-1">
+                    <span class="bg-blue-600 text-white font-bold text-xs px-2.5 py-1 rounded-md">句型 1</span>
+                    <h2 class="text-xl font-bold text-slate-900">“有利于……”</h2>
+                </div>
+                <p class="text-sm text-slate-600 font-medium">
+                    解释：意思是“对……有好处”。
+                </p>
+            </div>
+
+            <!-- 原文与例句 -->
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+                <p class="text-sm font-semibold text-slate-800">
+                    📖 原文：此次<span class="tooltip-word">利率调整<span class="tooltip-box"><span class="block text-amber-300 text-xs font-normal">lì lǜ tiáo zhěng</span><span class="block text-sm font-semibold mt-0.5">interest rate adjustment</span></span></span><span class="text-blue-600 font-bold">有利于</span>引导<span class="tooltip-word">货币信贷<span class="tooltip-box"><span class="block text-amber-300 text-xs font-normal">huò bì xìn dài</span><span class="block text-sm font-semibold mt-0.5">monetary credit</span></span></span>和<span class="tooltip-word">投资<span class="tooltip-box"><span class="block text-amber-300 text-xs font-normal">tóu zī</span><span class="block text-sm font-semibold mt-0.5">investment</span></span></span>的合理增长。
+                </p>
+                <div class="text-xs text-slate-600 leading-relaxed space-y-1 pl-2 border-l-2 border-blue-400">
+                    <p>例 (1) 冬天吃哪些水果<span class="text-blue-600 font-semibold">有利于</span>身体健康？</p>
+                    <p>例 (2) <span class="tooltip-word">面对面<span class="tooltip-box"><span class="block text-amber-300 text-xs font-normal">miàn duì miàn</span><span class="block text-sm font-semibold mt-0.5">face-to-face</span></span></span>的讨论交流<span class="text-blue-600 font-semibold">有利于</span>问题的尽快解决。</p>
+                    <p>例 (3) 央行此次<span class="tooltip-word">加息<span class="tooltip-box"><span class="block text-amber-300 text-xs font-normal">jiā xī</span><span class="block text-sm font-semibold mt-0.5">raise interest rates</span></span></span><span class="text-blue-600 font-semibold">有利于</span><span class="tooltip-word">刺激<span class="tooltip-box"><span class="block text-amber-300 text-xs font-normal">cì jī</span><span class="block text-sm font-semibold mt-0.5">stimulate</span></span></span>消费。</p>
+                    <p>例 (4) 睡眠<span class="text-blue-600 font-semibold">有利于</span><span class="tooltip-word">减肥<span class="tooltip-box"><span class="block text-amber-300 text-xs font-normal">jiǎn féi</span><span class="block text-sm font-semibold mt-0.5">lose weight</span></span></span>。</p>
+                </div>
+            </div>
+
+            <!-- 互动练习作答区 -->
+            <div class="space-y-4 pt-2">
+                <div class="flex items-center gap-2 text-sm font-bold text-slate-800">
+                    <i class="fa-solid fa-pen-clip text-blue-600"></i> 练习：用括号中的词语完成对话
+                </div>
+                <div class="p-4 bg-blue-50/50 rounded-xl border border-blue-100 space-y-3">
+                    <p class="text-sm font-medium text-slate-800">
+                        A: 你认为城市发展<span class="tooltip-word">私人汽车<span class="tooltip-box"><span class="block text-amber-300 text-xs font-normal">sī rén qì chē</span><span class="block text-sm font-semibold mt-0.5">private cars</span></span></span>有哪些<span class="tooltip-word">利弊<span class="tooltip-box"><span class="block text-amber-300 text-xs font-normal">lì bì</span><span class="block text-sm font-semibold mt-0.5">pros and cons</span></span></span>？
+                    </p>
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 text-sm">
+                        <span class="font-bold text-slate-800">B:</span>
+                        <div class="relative w-full">
+                            <input type="text" id="ans-1" placeholder="请输入或点击麦克风朗读作答..." class="w-full pr-10 pl-3 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none">
+                            <button onclick="toggleSpeech('ans-1')" class="absolute right-2 top-2 text-slate-400 hover:text-blue-600" title="语音输入">
+                                <i class="fa-solid fa-microphone"></i>
+                            </button>
+                        </div>
+                        <span class="text-xs font-semibold text-slate-500 whitespace-nowrap">（有利于 / 不利于）</span>
+                    </div>
+
+                    <!-- 按钮控制与参考答案 -->
+                    <div class="flex justify-between items-center pt-2">
+                        <button onclick="toggleAnswer('ref-1')" class="text-xs text-blue-600 font-semibold hover:underline flex items-center gap-1">
+                            <i class="fa-solid fa-eye"></i> 展开/隐藏 3个参考答案
+                        </button>
+                    </div>
+
+                    <div id="ref-1" class="hidden text-xs bg-white p-3 rounded-lg border border-slate-200 space-y-1.5 text-slate-700">
+                        <p class="font-bold text-blue-800">💡 参考答案示例：</p>
+                        <p>1. 发展私人汽车<span class="text-blue-600 font-semibold">有利于</span>带动相关产业发展，但<span class="text-blue-600 font-semibold">不利于</span>城市交通拥堵问题的解决。</p>
+                        <p>2. 这<span class="text-blue-600 font-semibold">有利于</span>人们便利出行，但是<span class="text-blue-600 font-semibold">不利于</span>环境保护。</p>
+                        <p>3. 私人汽车的增加<span class="text-blue-600 font-semibold">有利于</span>提高生活质量，却<span class="text-blue-600 font-semibold">不利于</span>改善空气质量。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= 句型 2 ================= -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 space-y-6">
+            <div class="border-b border-slate-100 pb-4">
+                <div class="flex items-center gap-2 mb-1">
+                    <span class="bg-blue-600 text-white font-bold text-xs px-2.5 py-1 rounded-md">句型 2</span>
+                    <h2 class="text-xl font-bold text-slate-900">“在……下”</h2>
+                </div>
+                <p class="text-sm text-slate-600 font-medium">
+                    解释：表示一定的范围、情况和条件等。
+                </p>
+            </div>
+
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+                <p class="text-sm font-semibold text-slate-800">
+                    📖 原文：<span class="text-blue-600 font-bold">在</span>世界经济<span class="tooltip-word">持续低迷<span class="tooltip-box"><span class="block text-amber-300 text-xs font-normal">chí xù dī mí</span><span class="block text-sm font-semibold mt-0.5">continued slump</span></span></span>、跨国投资大幅下降的<span class="tooltip-word">情况<span class="tooltip-box"><span class="block text-amber-300 text-xs font-normal">qíng kuàng</span><span class="block text-sm font-semibold mt-0.5">situation</span></span></span><span class="text-blue-600 font-bold">下</span>，中国吸收外商直接投资依然保持稳定。
+                </p>
+                <div class="text-xs text-slate-600 leading-relaxed space-y-1 pl-2 border-l-2 border-blue-400">
+                    <p>例 (1) 公司<span class="text-blue-600 font-semibold">在</span>我本人不知道的情况<span class="text-blue-600 font-semibold">下</span><span class="tooltip-word">扣除<span class="tooltip-box"><span class="block text-amber-300 text-xs font-normal">kòu chú</span><span class="block text-sm font-semibold mt-0.5">deduct</span></span></span>了我的<span class="tooltip-word">保险金<span class="tooltip-box"><span class="block text-amber-300 text-xs font-normal">bǎo xiǎn jīn</span><span class="block text-sm font-semibold mt-0.5">insurance money</span></span></span>。</p>
+                    <p>例 (2) 公司考虑<span class="text-blue-600 font-semibold">在</span>不减工资的情况<span class="text-blue-600 font-semibold">下</span>降低<span class="tooltip-word">劳动力成本<span class="tooltip-box"><span class="block text-amber-300 text-xs font-normal">láo dòng lì chéng běn</span><span class="block text-sm font-semibold mt-0.5">labor cost</span></span></span>。</p>
+                    <p>例 (3) 张董事长<span class="text-blue-600 font-semibold">在</span>王总经理的<span class="tooltip-word">陪同<span class="tooltip-box"><span class="block text-amber-300 text-xs font-normal">péi tóng</span><span class="block text-sm font-semibold mt-0.5">accompany</span></span></span><span class="text-blue-600 font-semibold">下</span>参观了新建的办公大楼。</p>
+                    <p>例 (4) 这是<span class="text-blue-600 font-semibold">在</span>经济全球化背景<span class="text-blue-600 font-semibold">下</span>的一次重要的<span class="tooltip-word">改革<span class="tooltip-box"><span class="block text-amber-300 text-xs font-normal">gǎi gé</span><span class="block text-sm font-semibold mt-0.5">reform</span></span></span>。</p>
+                </div>
+            </div>
+
+            <div class="space-y-4 pt-2">
+                <div class="flex items-center gap-2 text-sm font-bold text-slate-800">
+                    <i class="fa-solid fa-pen-clip text-blue-600"></i> 练习：用括号中的词语完成对话
+                </div>
+                <div class="p-4 bg-blue-50/50 rounded-xl border border-blue-100 space-y-3">
+                    <p class="text-sm font-medium text-slate-800">
+                        A: 我买的这件衣服如果不合适可以<span class="tooltip-word">退换<span class="tooltip-box"><span class="block text-amber-300 text-xs font-normal">tuì huàn</span><span class="block text-sm font-semibold mt-0.5">return or exchange</span></span></span>吗？
+                    </p>
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 text-sm">
+                        <span class="font-bold text-slate-800">B:</span>
+                        <div class="relative w-full">
+                            <input type="text" id="ans-2" placeholder="请输入或点击麦克风朗读作答..." class="w-full pr-10 pl-3 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none">
+                            <button onclick="toggleSpeech('ans-2')" class="absolute right-2 top-2 text-slate-400 hover:text-blue-600" title="语音输入">
+                                <i class="fa-solid fa-microphone"></i>
+                            </button>
+                        </div>
+                        <span class="text-xs font-semibold text-slate-500 whitespace-nowrap">（在……情况下）</span>
+                    </div>
+
+                    <div class="flex justify-between items-center pt-2">
+                        <button onclick="toggleAnswer('ref-2')" class="text-xs text-blue-600 font-semibold hover:underline flex items-center gap-1">
+                            <i class="fa-solid fa-eye"></i> 展开/隐藏 3个参考答案
+                        </button>
+                    </div>
+
+                    <div id="ref-2" class="hidden text-xs bg-white p-3 rounded-lg border border-slate-200 space-y-1.5 text-slate-700">
+                        <p class="font-bold text-blue-800">💡 参考答案示例：</p>
+                        <p>1. <span class="text-blue-600 font-semibold">在</span>小票齐全且不影响二次销售的<span class="text-blue-600 font-semibold">情况下</span>可以退换。</p>
+                        <p>2. <span class="text-blue-600 font-semibold">在</span>购买后七天内的情况<span class="text-blue-600 font-semibold">下</span>，凭发票可以办理退换。</p>
+                        <p>3. <span class="text-blue-600 font-semibold">在</span>衣服没有剪掉标签的<span class="text-blue-600 font-semibold">情况下</span>是可以退换的。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= 句型 3 ================= -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 space-y-6">
+            <div class="border-b border-slate-100 pb-4">
+                <div class="flex items-center gap-2 mb-1">
+                    <span class="bg-blue-600 text-white font-bold text-xs px-2.5 py-1 rounded-md">句型 3</span>
+                    <h2 class="text-xl font-bold text-slate-900">“仅次于……”</h2>
+                </div>
+                <p class="text-sm text-slate-600 font-medium">
+                    解释：“仅次于 A”意思是“只比 A 差一点儿”。
+                </p>
+            </div>
+
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+                <p class="text-sm font-semibold text-slate-800">
+                    📖 原文：（中国的外商投资额）在<span class="tooltip-word">全球范围<span class="tooltip-box"><span class="block text-amber-300 text-xs font-normal">quán qiú fàn wéi</span><span class="block text-sm font-semibold mt-0.5">global scope</span></span></span>内<span class="text-blue-600 font-bold">仅次于</span>美国和英国。
+                </p>
+                <div class="text-xs text-slate-600 leading-relaxed space-y-1 pl-2 border-l-2 border-blue-400">
+                    <p>例 (1) <span class="tooltip-word">中秋节<span class="tooltip-box"><span class="block text-amber-300 text-xs font-normal">zhōng qiū jié</span><span class="block text-sm font-semibold mt-0.5">Mid-Autumn Festival</span></span></span>是中国<span class="text-blue-600 font-semibold">仅次于</span>春节的第二大传统节日。</p>
+                    <p>例 (2) 广州小时<span class="tooltip-word">最低工资标准<span class="tooltip-box"><span class="block text-amber-300 text-xs font-normal">zuì dī gōng zī biāo zhǔn</span><span class="block text-sm font-semibold mt-0.5">minimum wage standard</span></span></span>为 7.5 元，<span class="text-blue-600 font-semibold">仅次于</span>北京的 7.9 元。</p>
+                    <p>例 (3) 中国目前已成为<span class="text-blue-600 font-semibold">仅次于</span>美国和日本的世界汽车第三大生产国。</p>
+                    <p>例 (4) <span class="tooltip-word">金融业<span class="tooltip-box"><span class="block text-amber-300 text-xs font-normal">jīn róng yè</span><span class="block text-sm font-semibold mt-0.5">financial industry</span></span></span>人才需求量大增，<span class="text-blue-600 font-semibold">仅次于</span> IT 行业。</p>
+                </div>
+            </div>
+
+            <div class="space-y-4 pt-2">
+                <div class="flex items-center gap-2 text-sm font-bold text-slate-800">
+                    <i class="fa-solid fa-pen-clip text-blue-600"></i> 练习：用括号中的词语完成对话
+                </div>
+                <div class="p-4 bg-blue-50/50 rounded-xl border border-blue-100 space-y-3">
+                    <p class="text-sm font-medium text-slate-800">
+                        A: 这个季度的<span class="tooltip-word">销售量<span class="tooltip-box"><span class="block text-amber-300 text-xs font-normal">xiāo shòu liàng</span><span class="block text-sm font-semibold mt-0.5">sales volume</span></span></span>怎么样？
+                    </p>
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 text-sm">
+                        <span class="font-bold text-slate-800">B:</span>
+                        <div class="relative w-full">
+                            <input type="text" id="ans-3" placeholder="请输入或点击麦克风朗读作答..." class="w-full pr-10 pl-3 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none">
+                            <button onclick="toggleSpeech('ans-3')" class="absolute right-2 top-2 text-slate-400 hover:text-blue-600" title="语音输入">
+                                <i class="fa-solid fa-microphone"></i>
+                            </button>
+                        </div>
+                        <span class="text-xs font-semibold text-slate-500 whitespace-nowrap">（仅次于）</span>
+                    </div>
+
+                    <div class="flex justify-between items-center pt-2">
+                        <button onclick="toggleAnswer('ref-3')" class="text-xs text-blue-600 font-semibold hover:underline flex items-center gap-1">
+                            <i class="fa-solid fa-eye"></i> 展开/隐藏 3个参考答案
+                        </button>
+                    </div>
+
+                    <div id="ref-3" class="hidden text-xs bg-white p-3 rounded-lg border border-slate-200 space-y-1.5 text-slate-700">
+                        <p class="font-bold text-blue-800">💡 参考答案示例：</p>
+                        <p>1. 这个季度的销售量很好，<span class="text-blue-600 font-semibold">仅次于</span>去年的最高纪录。</p>
+                        <p>2. 我们部门的销售业绩在公司排名第二，<span class="text-blue-600 font-semibold">仅次于</span>华东区分公司。</p>
+                        <p>3. 产品的整体销售量增长迅速，<span class="text-blue-600 font-semibold">仅次于</span>市场龙头企业。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= 句型 4 ================= -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 space-y-6">
+            <div class="border-b border-slate-100 pb-4">
+                <div class="flex items-center gap-2 mb-1">
+                    <span class="bg-blue-600 text-white font-bold text-xs px-2.5 py-1 rounded-md">句型 4</span>
+                    <h2 class="text-xl font-bold text-slate-900">“居……首位”</h2>
+                </div>
+                <p class="text-sm text-slate-600 font-medium">
+                    解释：“首位”意思是“第一位”。也可以说“居……第二位 / 第三位”。
+                </p>
+            </div>
+
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+                <p class="text-sm font-semibold text-slate-800">
+                    📖 原文：连续 12 年实际使用外资金额<span class="text-blue-600 font-bold">居</span>发展中国家和地区<span class="text-blue-600 font-bold">首位</span>。
+                </p>
+                <div class="text-xs text-slate-600 leading-relaxed space-y-1 pl-2 border-l-2 border-blue-400">
+                    <p>例 (1) 中国留学生人数<span class="text-blue-600 font-semibold">居</span>全世界<span class="text-blue-600 font-semibold">首位</span>，占全球总数的 14%。</p>
+                    <p>例 (2) 北京人健身消费月支出为 87 元，<span class="text-blue-600 font-semibold">居</span>六大城市<span class="text-blue-600 font-semibold">首位</span>。</p>
+                    <p>例 (3) 温州城市居民在外用餐年人均消费 2278 元，<span class="text-blue-600 font-semibold">居</span>浙江省<span class="text-blue-600 font-semibold">首位</span>。</p>
+                    <p>例 (4) 电子工业去年收入<span class="text-blue-600 font-semibold">居</span>各行业<span class="text-blue-600 font-semibold">首位</span>，同比增长 24.8%。</p>
+                </div>
+            </div>
+
+            <div class="space-y-4 pt-2">
+                <div class="flex items-center gap-2 text-sm font-bold text-slate-800">
+                    <i class="fa-solid fa-pen-clip text-blue-600"></i> 练习：用括号中的词语完成对话
+                </div>
+                <div class="p-4 bg-blue-50/50 rounded-xl border border-blue-100 space-y-3">
+                    <p class="text-sm font-medium text-slate-800">
+                        A: 在中国的各大城市中，北京的<span class="tooltip-word">物价<span class="tooltip-box"><span class="block text-amber-300 text-xs font-normal">wù jià</span><span class="block text-sm font-semibold mt-0.5">commodity price</span></span></span>是不是最高的？
+                    </p>
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 text-sm">
+                        <span class="font-bold text-slate-800">B:</span>
+                        <div class="relative w-full">
+                            <input type="text" id="ans-4" placeholder="请输入或点击麦克风朗读作答..." class="w-full pr-10 pl-3 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none">
+                            <button onclick="toggleSpeech('ans-4')" class="absolute right-2 top-2 text-slate-400 hover:text-blue-600" title="语音输入">
+                                <i class="fa-solid fa-microphone"></i>
+                            </button>
+                        </div>
+                        <span class="text-xs font-semibold text-slate-500 whitespace-nowrap">（居……首位）</span>
+                    </div>
+
+                    <div class="flex justify-between items-center pt-2">
+                        <button onclick="toggleAnswer('ref-4')" class="text-xs text-blue-600 font-semibold hover:underline flex items-center gap-1">
+                            <i class="fa-solid fa-eye"></i> 展开/隐藏 3个参考答案
+                        </button>
+                    </div>
+
+                    <div id="ref-4" class="hidden text-xs bg-white p-3 rounded-lg border border-slate-200 space-y-1.5 text-slate-700">
+                        <p class="font-bold text-blue-800">💡 参考答案示例：</p>
+                        <p>1. 是的，北京的居民消费物价水平长期<span class="text-blue-600 font-semibold">居</span>全国各大城市<span class="text-blue-600 font-semibold">首位</span>。</p>
+                        <p>2. 对，北京的生活成本和消费水平一直<span class="text-blue-600 font-semibold">居</span>北方城市<span class="text-blue-600 font-semibold">首位</span>。</p>
+                        <p>3. 是的，北京在房产与生活服务物价上连续多年<span class="text-blue-600 font-semibold">居</span>全国<span class="text-blue-600 font-semibold">首位</span>。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 语音识别状态浮窗 -->
+        <div id="speechModal" class="hidden fixed bottom-6 right-6 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 z-50">
+            <div class="flex items-center">
+                <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
+            </div>
+            <div class="text-xs">
+                <p id="speechStatus" class="font-bold text-blue-400">正在聆听中...</p>
+                <p class="text-slate-300">请读出您的作答句子</p>
+            </div>
+            <button onclick="stopSpeech()" class="ml-2 text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="bg-white border-t border-slate-200 py-4 mt-auto">
+        <div class="max-w-5xl mx-auto px-4 text-center text-xs text-slate-400">
+            新丝路高级速成商务汉语 Ⅰ · 句型交互练习模块 © 2026
+        </div>
+    </footer>
+
+    <script>
+        // 展开/隐藏参考答案
+        function toggleAnswer(id) {
+            const el = document.getElementById(id);
+            el.classList.toggle('hidden');
+        }
+
+        // Web Speech API 语音识别集成
+        let activeInputId = null;
+        let recognition = null;
+
+        function initRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (SpeechRecognition) {
+                recognition = new SpeechRecognition();
+                recognition.lang = 'zh-CN';
+                recognition.continuous = false;
+                recognition.interimResults = true;
+
+                recognition.onstart = () => {
+                    document.getElementById('speechModal').classList.remove('hidden');
+                };
+
+                recognition.onresult = (event) => {
+                    let transcript = '';
+                    for (let i = event.resultIndex; i < event.results.length; ++i) {
+                        transcript += event.results[i][0].transcript;
+                    }
+                    if (activeInputId) {
+                        document.getElementById(activeInputId).value = transcript;
+                    }
+                };
+
+                recognition.onerror = () => {
+                    document.getElementById('speechStatus').innerText = '未听清，请重新朗读';
+                };
+
+                recognition.onend = () => {
+                    document.getElementById('speechModal').classList.add('hidden');
+                };
+            }
+        }
+
+        function toggleSpeech(inputId) {
+            if (!recognition) {
+                initRecognition();
+            }
+            if (!recognition) {
+                alert("当前浏览器暂不支持 SpeechRecognition 语音识别，请直接使用键盘打字输入。");
+                return;
+            }
+            activeInputId = inputId;
+            try {
+                recognition.start();
+            } catch(e) {
+                recognition.stop();
+            }
+        }
+
+        function stopSpeech() {
+            if (recognition) recognition.stop();
+            document.getElementById('speechModal').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
