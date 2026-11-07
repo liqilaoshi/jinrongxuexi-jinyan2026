@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>商务汉语综合练习与自动批改系统</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans SC', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #f8fafc;
+        }
+
+        /* 词语悬浮/点击提示框样式 (CSS Tooltip) */
+        .tooltip-word {
+            position: relative;
+            display: inline-block;
+            color: #1d4ed8;
+            font-weight: 600;
+            border-bottom: 2px dashed #93c5fd;
+            padding: 0 3px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-radius: 4px;
+        }
+
+        .tooltip-word:hover {
+            background-color: #dbeafe;
+            border-bottom-color: #2563eb;
+        }
+
+        .tooltip-word .tooltip-box {
+            visibility: hidden;
+            opacity: 0;
+            width: max-content;
+            max-width: 280px;
+            background-color: #0f172a;
+            color: #fff;
+            text-align: center;
+            border-radius: 8px;
+            padding: 6px 12px;
+            position: absolute;
+            z-index: 50;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%) translateY(4px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25);
+            transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+            pointer-events: none;
+        }
+
+        .tooltip-word .tooltip-box::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -6px;
+            border-width: 6px;
+            border-style: solid;
+            border-color: #0f172a transparent transparent transparent;
+        }
+
+        .tooltip-word:hover .tooltip-box,
+        .tooltip-word:focus .tooltip-box {
+            visibility: visible;
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* 音波动画 */
+        .wave-bar {
+            display: inline-block;
+            width: 4px;
+            height: 14px;
+            margin: 0 2px;
+            background-color: #3b82f6;
+            border-radius: 2px;
+            animation: wave 1s infinite ease-in-out;
+        }
+        .wave-bar:nth-child(2) { animation-delay: 0.1s; }
+        .wave-bar:nth-child(3) { animation-delay: 0.2s; }
+        .wave-bar:nth-child(4) { animation-delay: 0.3s; }
+        .wave-bar:nth-child(5) { animation-delay: 0.4s; }
+        @keyframes wave {
+            0%, 100% { height: 8px; }
+            50% { height: 24px; }
+        }
+
+        .step-content {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        .step-content.active {
+            display: block;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-800 flex flex-col justify-between">
+
+    <!-- 顶部导航栏与 Step 控制线 -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+        <div class="max-w-5xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-md shadow-indigo-200">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-slate-900 leading-tight">高级商务汉语 · 综合词汇与句型练习</h1>
+                    <p class="text-xs text-slate-500">思维导图组词 · 选词填空 · 句型表达与语音检测</p>
+                </div>
+            </div>
+
+            <!-- 分步导航器 -->
+            <div class="flex items-center gap-2 text-xs font-medium">
+                <div id="nav-step-1" class="flex items-center gap-1.5 text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-full border border-indigo-200 font-semibold cursor-pointer" onclick="switchStep(1)">
+                    <span class="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px]">1</span>
+                    <span>字词积累 (图1)</span>
+                </div>
+                <i class="fa-solid fa-chevron-right text-slate-300 text-[10px]"></i>
+                <div id="nav-step-2" class="flex items-center gap-1.5 text-slate-400 px-3 py-1.5 rounded-full border border-transparent cursor-pointer" onclick="switchStep(2)">
+                    <span class="w-5 h-5 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-[10px]">2</span>
+                    <span>选词填空 (图2/3)</span>
+                </div>
+                <i class="fa-solid fa-chevron-right text-slate-300 text-[10px]"></i>
+                <div id="nav-step-3" class="flex items-center gap-1.5 text-slate-400 px-3 py-1.5 rounded-full border border-transparent cursor-pointer" onclick="switchStep(3)">
+                    <span class="w-5 h-5 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-[10px]">3</span>
+                    <span>对话表达 (图4)</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主体内容 -->
+    <main class="max-w-5xl mx-auto w-full px-4 py-8 flex-grow">
+
+        <!-- ================= STEP 1: 汉字组词与词义对应 (图一) ================= -->
+        <div id="step-1" class="step-content active space-y-8">
+            <div class="bg-indigo-50 border border-indigo-200 rounded-2xl p-4 flex items-start gap-3 text-indigo-900 shadow-sm">
+                <i class="fa-solid fa-circle-info text-indigo-600 mt-0.5 text-lg"></i>
+                <div class="text-sm">
+                    <p class="font-bold mb-0.5">练习说明 (第一部分)：</p>
+                    <p>1. 根据中心字“贷”和“商”，思维联想写出 4 个包含该字的经贸常用词语。<br>2. 根据释义，从课文中找出完全相对应的词语。填完后点击“提交批改”按钮即可获得自动反馈！</p>
+                </div>
+            </div>
+
+            <!-- 1. 汉字联想组词思维导图 -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 space-y-6">
+                <div class="border-b border-slate-100 pb-3 flex justify-between items-center">
+                    <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                        <i class="fa-solid fa-sitemap text-indigo-600"></i> 一、理解“贷”和“商”两个字的意思，联想组词
+                    </h2>
+                    <span class="text-xs font-semibold bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full">满分 40 分</span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
+                    <!-- “贷” 字思维导图 -->
+                    <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200 flex flex-col items-center">
+                        <p class="text-xs font-bold text-slate-500 mb-4 uppercase">词汇核心 1：dài / loan, credit</p>
+                        
+                        <div class="w-full max-w-xs space-y-3">
+                            <div class="flex justify-center">
+                                <input type="text" id="dai-1" placeholder="词语 1 (如: 贷款)" class="w-28 text-center px-3 py-1.5 text-sm font-semibold rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none">
+                            </div>
+                            <div class="flex justify-between items-center gap-2">
+                                <input type="text" id="dai-2" placeholder="词语 2" class="w-28 text-center px-3 py-1.5 text-sm font-semibold rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none">
+                                <div class="w-16 h-16 rounded-full bg-indigo-600 text-white font-black text-2xl flex items-center justify-center shadow-lg shadow-indigo-200">
+                                    贷
+                                </div>
+                                <input type="text" id="dai-3" placeholder="词语 3" class="w-28 text-center px-3 py-1.5 text-sm font-semibold rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none">
+                            </div>
+                            <div class="flex justify-center">
+                                <input type="text" id="dai-4" placeholder="词语 4" class="w-28 text-center px-3 py-1.5 text-sm font-semibold rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none">
+                            </div>
+                        </div>
+                        <p class="text-[11px] text-slate-400 mt-4">提示词池: 贷款、信贷、房贷、车贷、存贷款、借贷、联贷等</p>
+                    </div>
+
+                    <!-- “商” 字思维导图 -->
+                    <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200 flex flex-col items-center">
+                        <p class="text-xs font-bold text-slate-500 mb-4 uppercase">词汇核心 2：shāng / business, commerce</p>
+                        
+                        <div class="w-full max-w-xs space-y-3">
+                            <div class="flex justify-center">
+                                <input type="text" id="shang-1" placeholder="词语 1 (如: 外商)" class="w-28 text-center px-3 py-1.5 text-sm font-semibold rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none">
+                            </div>
+                            <div class="flex justify-between items-center gap-2">
+                                <input type="text" id="shang-2" placeholder="词语 2" class="w-28 text-center px-3 py-1.5 text-sm font-semibold rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none">
+                                <div class="w-16 h-16 rounded-full bg-blue-600 text-white font-black text-2xl flex items-center justify-center shadow-lg shadow-blue-200">
+                                    商
+                                </div>
+                                <input type="text" id="shang-3" placeholder="词语 3" class="w-28 text-center px-3 py-1.5 text-sm font-semibold rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none">
+                            </div>
+                            <div class="flex justify-center">
+                                <input type="text" id="shang-4" placeholder="词语 4" class="w-28 text-center px-3 py-1.5 text-sm font-semibold rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none">
+                            </div>
+                        </div>
+                        <p class="text-[11px] text-slate-400 mt-4">提示词池: 外商、商务、商业、商人、商会、经商、商品等</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. 课文词义对应 -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 space-y-6">
+                <div class="border-b border-slate-100 pb-3 flex justify-between items-center">
+                    <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                        <i class="fa-solid fa-arrow-right-arrow-left text-indigo-600"></i> 二、从课文中找出与下面词义对应的词语
+                    </h2>
+                    <span class="text-xs font-semibold bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full">每题 6 分，共 60 分</span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm font-medium">
+                    <!-- Match 1 -->
+                    <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+                        <span class="text-slate-700">1. 外国商人 ——</span>
+                        <input type="text" value="外商" readonly class="w-28 text-center py-1 bg-slate-200 text-slate-600 rounded-lg font-bold">
+                    </div>
+                    <!-- Match 2 -->
+                    <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+                        <span class="text-slate-700">2. 物品价格 ——</span>
+                        <input type="text" id="match-2" placeholder="输入对应词" class="w-28 text-center py-1 bg-white border border-slate-300 rounded-lg text-indigo-600 font-bold focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+                    <!-- Match 3 -->
+                    <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+                        <span class="text-slate-700">3. 外国资本 ——</span>
+                        <input type="text" id="match-3" placeholder="输入对应词" class="w-28 text-center py-1 bg-white border border-slate-300 rounded-lg text-indigo-600 font-bold focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+                    <!-- Match 4 -->
+                    <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+                        <span class="text-slate-700">4. 中央银行 ——</span>
+                        <input type="text" id="match-4" placeholder="输入对应词" class="w-28 text-center py-1 bg-white border border-slate-300 rounded-lg text-indigo-600 font-bold focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+                    <!-- Match 5 -->
+                    <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+                        <span class="text-slate-700">5. 很大幅度的 ——</span>
+                        <input type="text" id="match-5" placeholder="输入对应词" class="w-28 text-center py-1 bg-white border border-slate-300 rounded-lg text-indigo-600 font-bold focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+                    <!-- Match 6 -->
+                    <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+                        <span class="text-slate-700">6. 和去年同期相比 ——</span>
+                        <input type="text" id="match-6" placeholder="输入对应词" class="w-28 text-center py-1 bg-white border border-slate-300 rounded-lg text-indigo-600 font-bold focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+                    <!-- Match 7 -->
+                    <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+                        <span class="text-slate-700">7. 加起来计算 ——</span>
+                        <input type="text" id="match-7" placeholder="输入对应词" class="w-28 text-center py-1 bg-white border border-slate-300 rounded-lg text-indigo-600 font-bold focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+                    <!-- Match 8 -->
+                    <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+                        <span class="text-slate-700">8. 往上调整 ——</span>
+                        <input type="text" id="match-8" placeholder="输入对应词" class="w-28 text-center py-1 bg-white border border-slate-300 rounded-lg text-indigo-600 font-bold focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+                    <!-- Match 9 -->
+                    <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+                        <span class="text-slate-700">9. 截止到 ——</span>
+                        <input type="text" id="match-9" placeholder="输入对应词" class="w-28 text-center py-1 bg-white border border-slate-300 rounded-lg text-indigo-600 font-bold focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+                    <!-- Match 10 -->
+                    <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+                        <span class="text-slate-700">10. 信用贷款 ——</span>
+                        <input type="text" id="match-10" placeholder="输入对应词" class="w-28 text-center py-1 bg-white border border-slate-300 rounded-lg text-indigo-600 font-bold focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+                </div>
+
+                <div id="step1-feedback" class="hidden p-4 rounded-xl border"></div>
+            </div>
+
+            <!-- 操作按钮 -->
+            <div class="flex justify-between items-center">
+                <span class="text-xs text-slate-400">步骤 1/3：词汇掌握与对应</span>
+                <div class="flex gap-3">
+                    <button onclick="gradeStep1()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-6 rounded-xl shadow-md transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-check"></i> 提交批改 Step 1
+                    </button>
+                    <button onclick="switchStep(2)" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-6 rounded-xl shadow-md transition flex items-center gap-1.5">
+                        下一步：选词填空 <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= STEP 2: 选词填空 (图二与图三) ================= -->
+        <div id="step-2" class="step-content space-y-8">
+            <div class="bg-blue-50 border border-blue-200 rounded-2xl p-4 flex items-start gap-3 text-blue-900 shadow-sm">
+                <i class="fa-solid fa-circle-info text-blue-600 mt-0.5 text-lg"></i>
+                <div class="text-sm">
+                    <p class="font-bold mb-0.5">练习说明 (第二部分)：</p>
+                    <p>将鼠标悬停在备选词汇库或题目带<span class="text-blue-600 font-semibold underline decoration-dashed">蓝色虚线</span>的词语上，可查看拼音与中文/英文说明。请为 10 道经贸句子选择最恰当的词语！</p>
+                </div>
+            </div>
+
+            <!-- 词汇备选库 (带提示) -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                <p class="text-xs font-bold text-slate-500 mb-3 uppercase tracking-wider">三、选词填空备选词汇库 (滑动悬停查看拼音释义)：</p>
+                <div class="flex flex-wrap gap-3">
+                    <span class="tooltip-word bg-slate-50 border border-slate-300 text-slate-800 text-sm px-3 py-1.5 rounded-lg shadow-sm">
+                        跨国<span class="tooltip-box"><span class="block text-amber-300 text-xs font-normal">kuà guó</span><span class="block text-sm font-semibold mt-0.5">transnational / multinational</span></span>
+                    </span>
+                    <span class="tooltip-word bg-slate-50 border border-slate-300 text-slate-800 text-sm px-3 py-1.5 rounded-lg shadow-sm">
+                        低迷<span class="tooltip-box"><span class="block text-amber-300 text-xs font-normal">dī mí</span><span class="block text-sm font-semibold mt-0.5">slump / depressed</span></span>
+                    </span>
+                    <span class="tooltip-word bg-slate-50 border border-slate-300 text-slate-800 text-sm px-3 py-1.5 rounded-lg shadow-sm">
+                        大幅<span class="tooltip-box"><span class="block text-amber-300 text-xs font-normal">dà fú</span><span class="block text-sm font-semibold mt-0.5">substantial / by a large margin</span></span>
+                    </span>
+                    <span class="tooltip-word bg-slate-50 border border-slate-300 text-slate-800 text-sm px-3 py-1.5 rounded-lg shadow-sm">
+                        金额<span class="tooltip-box"><span class="block text-amber-300 text-xs font-normal">jīn 'é</span><span class="block text-sm font-semibold mt-0.5">amount of money</span></span>
+                    </span>
+                    <span class="tooltip-word bg-slate-50 border border-slate-300 text-slate-800 text-sm px-3 py-1.5 rounded-lg shadow-sm">
+                        累计<span class="tooltip-box"><span class="block text-amber-300 text-xs font-normal">lěi jì</span><span class="block text-sm font-semibold mt-0.5">accumulative total</span></span>
+                    </span>
+                    <span class="tooltip-word bg-slate-50 border border-slate-300 text-slate-800 text-sm px-3 py-1.5 rounded-lg shadow-sm">
+                        截至<span class="tooltip-box"><span class="block text-amber-300 text-xs font-normal">jié zhì</span><span class="block text-sm font-semibold mt-0.5">up to / as of</span></span>
+                    </span>
+                    <span class="tooltip-word bg-slate-50 border border-slate-300 text-slate-800 text-sm px-3 py-1.5 rounded-lg shadow-sm">
+                        利率<span class="tooltip-box"><span class="block text-amber-300 text-xs font-normal">lì lǜ</span><span class="block text-sm font-semibold mt-0.5">interest rate</span></span>
+                    </span>
+                    <span class="tooltip-word bg-slate-50 border border-slate-300 text-slate-800 text-sm px-3 py-1.5 rounded-lg shadow-sm">
+                        投资<span class="tooltip-box"><span class="block text-amber-300 text-xs font-normal">tóu zī</span><span class="block text-sm font-semibold mt-0.5">investment</span></span>
+                    </span>
+                    <span class="tooltip-word bg-slate-50 border border-slate-300 text-slate-800 text-sm px-3 py-1.5 rounded-lg shadow-sm">
+                        活期<span class="tooltip-box"><span class="block text-amber-300 text-xs font-normal">huó qī</span><span class="block text-sm font-semibold mt-0.5">demand / current (deposit)</span></span>
+                    </span>
+                    <span class="tooltip-word bg-slate-50 border border-slate-300 text-slate-800 text-sm px-3 py-1.5 rounded-lg shadow-sm">
+                        现行<span class="tooltip-box"><span class="block text-amber-300 text-xs font-normal">xiàn xíng</span><span class="block text-sm font-semibold mt-0.5">currently in effect</span></span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- 10 道填空题目 (精确对应图2、图3) -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 space-y-6">
+                <div class="border-b border-slate-100 pb-3 flex justify-between items-center">
+                    <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                        <i class="fa-solid fa-list-check text-blue-600"></i> 选词填空测试（共 10 题，每题 10 分）
+                    </h2>
+                    <span class="text-xs font-semibold bg-blue-50 text-blue-600 px-3 py-1 rounded-full">满分 100 分</span>
+                </div>
+
+                <div class="space-y-5 text-slate-800 leading-relaxed text-sm">
+                    <!-- Q1 -->
+                    <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                        <p class="font-medium">
+                            1. 今年汽车销量<span class="tooltip-word">同比<span class="tooltip-box"><span class="block text-amber-300 text-xs font-normal">tóng bǐ</span><span class="block text-sm font-semibold mt-0.5">year-on-year</span></span></span>下降了 2%，市场出现<span class="tooltip-word">供大于求<span class="tooltip-box"><span class="block text-amber-300 text-xs font-normal">gōng dà yú qiú</span><span class="block text-sm font-semibold mt-0.5">oversupply</span></span></span>现象，车市出现（ 
+                            <select id="cloze-1" class="mx-1 bg-white border border-slate-300 text-blue-600 font-semibold rounded-md px-2 py-1 focus:ring-2 focus:ring-blue-500 outline-none">
+                                <option value="">请选择</option>
+                                <option value="跨国">跨国</option><option value="低迷">低迷</option><option value="大幅">大幅</option><option value="金额">金额</option><option value="累计">累计</option><option value="截至">截至</option><option value="利率">利率</option><option value="投资">投资</option><option value="活期">活期</option><option value="现行">现行</option>
+                            </select> ）。
+                        </p>
+                        <div id="fb-cloze-1" class="text-xs mt-2 hidden"></div>
+                    </div>
+
+                    <!-- Q2 -->
+                    <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                        <p class="font-medium">
+                            2. 这款车经过这次（ 
+                            <select id="cloze-2" class="mx-1 bg-white border border-slate-300 text-blue-600 font-semibold rounded-md px-2 py-1 focus:ring-2 focus:ring-blue-500 outline-none">
+                                <option value="">请选择</option>
+                                <option value="跨国">跨国</option><option value="低迷">低迷</option><option value="大幅">大幅</option><option value="金额">金额</option><option value="累计">累计</option><option value="截至">截至</option><option value="利率">利率</option><option value="投资">投资</option><option value="活期">活期</option><option value="现行">现行</option>
+                            </select> ）降价后，进一步提高了<span class="tooltip-word">性价比<span class="tooltip-box"><span class="block text-amber-300 text-xs font-normal">xìng jià bǐ</span><span class="block text-sm font-semibold mt-0.5">cost performance ratio</span></span></span>，受到许多家庭用户欢迎。
+                        </p>
+                        <div id="fb-cloze-2" class="text-xs mt-2 hidden"></div>
+                    </div>
+
+                    <!-- Q3 -->
+                    <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                        <p class="font-medium">
+                            3. 现在人民币的<span class="tooltip-word">活期存款<span class="tooltip-box"><span class="block text-amber-300 text-xs font-normal">huó qī cún kuǎn</span><span class="block text-sm font-semibold mt-0.5">demand deposit</span></span></span>年（ 
+                            <select id="cloze-3" class="mx-1 bg-white border border-slate-300 text-blue-600 font-semibold rounded-md px-2 py-1 focus:ring-2 focus:ring-blue-500 outline-none">
+                                <option value="">请选择</option>
+                                <option value="跨国">跨国</option><option value="低迷">低迷</option><option value="大幅">大幅</option><option value="金额">金额</option><option value="累计">累计</option><option value="截至">截至</option><option value="利率">利率</option><option value="投资">投资</option><option value="活期">活期</option><option value="现行">现行</option>
+                            </select> ）是多少？
+                        </p>
+                        <div id="fb-cloze-3" class="text-xs mt-2 hidden"></div>
+                    </div>
+
+                    <!-- Q4 -->
+                    <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                        <p class="font-medium">
+                            4. 新加坡是对广东直接（ 
+                            <select id="cloze-4" class="mx-1 bg-white border border-slate-300 text-blue-600 font-semibold rounded-md px-2 py-1 focus:ring-2 focus:ring-blue-500 outline-none">
+                                <option value="">请选择</option>
+                                <option value="跨国">跨国</option><option value="低迷">低迷</option><option value="大幅">大幅</option><option value="金额">金额</option><option value="累计">累计</option><option value="截至">截至</option><option value="利率">利率</option><option value="投资">投资</option><option value="活期">活期</option><option value="现行">现行</option>
+                            </select> ）最多的国家之一。
+                        </p>
+                        <div id="fb-cloze-4" class="text-xs mt-2 hidden"></div>
+                    </div>
+
+                    <!-- Q5 -->
+                    <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                        <p class="font-medium">
+                            5. 公司决定将免费送货的<span class="tooltip-word">订单<span class="tooltip-box"><span class="block text-amber-300 text-xs font-normal">dìng dān</span><span class="block text-sm font-semibold mt-0.5">order sheet</span></span></span>（ 
+                            <select id="cloze-5" class="mx-1 bg-white border border-slate-300 text-blue-600 font-semibold rounded-md px-2 py-1 focus:ring-2 focus:ring-blue-500 outline-none">
+                                <option value="">请选择</option>
+                                <option value="跨国">跨国</option><option value="低迷">低迷</option><option value="大幅">大幅</option><option value="金额">金额</option><option value="累计">累计</option><option value="截至">截至</option><option value="利率">利率</option><option value="投资">投资</option><option value="活期">活期</option><option value="现行">现行</option>
+                            </select> ）从 200 元下调至 99 元。
+                        </p>
+                        <div id="fb-cloze-5" class="text-xs mt-2 hidden"></div>
+                    </div>
+
+                    <!-- Q6 -->
+                    <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                        <p class="font-medium">
+                            6. 据统计，以联想等为代表的 3 万多家中国企业在从事各类（ 
+                            <select id="cloze-6" class="mx-1 bg-white border border-slate-300 text-blue-600 font-semibold rounded-md px-2 py-1 focus:ring-2 focus:ring-blue-500 outline-none">
+                                <option value="">请选择</option>
+                                <option value="跨国">跨国</option><option value="低迷">低迷</option><option value="大幅">大幅</option><option value="金额">金额</option><option value="累计">累计</option><option value="截至">截至</option><option value="利率">利率</option><option value="投资">投资</option><option value="活期">活期</option><option value="现行">现行</option>
+                            </select> ）经营，即全球贸易。
+                        </p>
+                        <div id="fb-cloze-6" class="text-xs mt-2 hidden"></div>
+                    </div>
+
+                    <!-- Q7 -->
+                    <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                        <p class="font-medium">
+                            7. 参会<span class="tooltip-word">报名<span class="tooltip-box"><span class="block text-amber-300 text-xs font-normal">bào míng</span><span class="block text-sm font-semibold mt-0.5">registration</span></span></span>日期（ 
+                            <select id="cloze-7" class="mx-1 bg-white border border-slate-300 text-blue-600 font-semibold rounded-md px-2 py-1 focus:ring-2 focus:ring-blue-500 outline-none">
+                                <option value="">请选择</option>
+                                <option value="跨国">跨国</option><option value="低迷">低迷</option><option value="大幅">大幅</option><option value="金额">金额</option><option value="累计">累计</option><option value="截至">截至</option><option value="利率">利率</option><option value="投资">投资</option><option value="活期">活期</option><option value="现行">现行</option>
+                            </select> ）本月底。
+                        </p>
+                        <div id="fb-cloze-7" class="text-xs mt-2 hidden"></div>
+                    </div>
+
+                    <!-- Q8 -->
+                    <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                        <p class="font-medium">
+                            8. 您这 1 万元是打算存（ 
+                            <select id="cloze-8" class="mx-1 bg-white border border-slate-300 text-blue-600 font-semibold rounded-md px-2 py-1 focus:ring-2 focus:ring-blue-500 outline-none">
+                                <option value="">请选择</option>
+                                <option value="跨国">跨国</option><option value="低迷">低迷</option><option value="大幅">大幅</option><option value="金额">金额</option><option value="累计">累计</option><option value="截至">截至</option><option value="利率">利率</option><option value="投资">投资</option><option value="活期">活期</option><option value="现行">现行</option>
+                            </select> ）还是存定期？
+                        </p>
+                        <div id="fb-cloze-8" class="text-xs mt-2 hidden"></div>
+                    </div>
+
+                    <!-- Q9 -->
+                    <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                        <p class="font-medium">
+                            9. 通过这件事我们希望了解一下（ 
+                            <select id="cloze-9" class="mx-1 bg-white border border-slate-300 text-blue-600 font-semibold rounded-md px-2 py-1 focus:ring-2 focus:ring-blue-500 outline-none">
+                                <option value="">请选择</option>
+                                <option value="跨国">跨国</option><option value="低迷">低迷</option><option value="大幅">大幅</option><option value="金额">金额</option><option value="累计">累计</option><option value="截至">截至</option><option value="利率">利率</option><option value="投资">投资</option><option value="活期">活期</option><option value="现行">现行</option>
+                            </select> ）的<span class="tooltip-word">劳动法<span class="tooltip-box"><span class="block text-amber-300 text-xs font-normal">láo dòng fǎ</span><span class="block text-sm font-semibold mt-0.5">Labour Law</span></span></span>存在哪些问题。
+                        </p>
+                        <div id="fb-cloze-9" class="text-xs mt-2 hidden"></div>
+                    </div>
+
+                    <!-- Q10 -->
+                    <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                        <p class="font-medium">
+                            10. <span class="tooltip-word">财政部<span class="tooltip-box"><span class="block text-amber-300 text-xs font-normal">cái zhèng bù</span><span class="block text-sm font-semibold mt-0.5">Ministry of Finance</span></span></span> 5 年来投入西部大开发（ 
+                            <select id="cloze-10" class="mx-1 bg-white border border-slate-300 text-blue-600 font-semibold rounded-md px-2 py-1 focus:ring-2 focus:ring-blue-500 outline-none">
+                                <option value="">请选择</option>
+                                <option value="跨国">跨国</option><option value="低迷">低迷</option><option value="大幅">大幅</option><option value="金额">金额</option><option value="累计">累计</option><option value="截至">截至</option><option value="利率">利率</option><option value="投资">投资</option><option value="活期">活期</option><option value="现行">现行</option>
+                            </select> ）资金近万亿元。
+                        </p>
+                        <div id="fb-cloze-10" class="text-xs mt-2 hidden"></div>
+                    </div>
+                </div>
+
+                <div id="step2-feedback" class="hidden p-4 rounded-xl border text-center font-bold"></div>
+            </div>
+
+            <!-- 操作按钮 -->
+            <div class="flex justify-between items-center">
+                <button onclick="switchStep(1)" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold py-2.5 px-6 rounded-xl transition">
+                    <i class="fa-solid fa-arrow-left"></i> 上一步
+                </button>
+                <div class="flex gap-3">
+                    <button onclick="gradeStep2()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-6 rounded-xl shadow-md transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-check"></i> 自动批改 Step 2
+                    </button>
+                    <button onclick="switchStep(3)" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-6 rounded-xl shadow-md transition flex items-center gap-1.5">
+                        下一步：对话表达 <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= STEP 3: 参考括号词语完成对话 (图四) ================= -->
+        <div id="step-3" class="step-content space-y-8">
+            <div class="bg-purple-50 border border-purple-200 rounded-2xl p-4 flex items-start gap-3 text-purple-900 shadow-sm">
+                <i class="fa-solid fa-microphone text-purple-600 mt-0.5 text-lg"></i>
+                <div class="text-sm">
+                    <p class="font-bold mb-0.5">练习说明 (第三部分)：</p>
+                    <p>参考括号里的词语完成对话。您可以打字输入或者点击麦克风图标进行语音识别输入，作答后可点击“查看 3 个参考答案”展开详细对比提示！</p>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 space-y-6">
+                <div class="border-b border-slate-100 pb-3 flex justify-between items-center">
+                    <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                        <i class="fa-comments fa-regular text-indigo-600"></i> 四、参考括号里的词语完成对话
+                    </h2>
+                    <span class="text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-200 px-3 py-1 rounded-full">支持语音/打字双模式</span>
+                </div>
+
+                <div class="space-y-6">
+                    <!-- Dialogue 1 -->
+                    <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
+                        <p class="text-sm font-semibold text-slate-800">
+                            1. A: 目前世界经济情况怎么样？
+                        </p>
+                        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 text-sm">
+                            <span class="font-bold text-indigo-600">B:</span>
+                            <div class="relative w-full">
+                                <input type="text" id="dlg-1" placeholder="请输入或点击右侧麦克风语音输入..." class="w-full pr-10 pl-3 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none">
+                                <button onclick="toggleSpeech('dlg-1')" class="absolute right-2 top-2 text-slate-400 hover:text-indigo-600" title="语音输入">
+                                    <i class="fa-solid fa-microphone"></i>
+                                </button>
+                            </div>
+                            <span class="text-xs font-bold text-slate-500 whitespace-nowrap">（低迷 投资）</span>
+                        </div>
+                        <div class="flex justify-between items-center pt-1">
+                            <button onclick="toggleAnswer('ans-dlg-1')" class="text-xs text-indigo-600 font-semibold hover:underline flex items-center gap-1">
+                                <i class="fa-solid fa-eye"></i> 查看 3 个参考答案
+                            </button>
+                        </div>
+                        <div id="ans-dlg-1" class="hidden text-xs bg-white p-3 rounded-lg border border-slate-200 space-y-1.5 text-slate-700">
+                            <p class="font-bold text-indigo-800">💡 参考答案选项：</p>
+                            <p>1. 世界经济持续<span class="text-indigo-600 font-bold">低迷</span>，跨国<span class="text-indigo-600 font-bold">投资</span>大幅下降。</p>
+                            <p>2. 当前国际经济环境较为<span class="text-indigo-600 font-bold">低迷</span>，许多企业的海外<span class="text-indigo-600 font-bold">投资</span>计划都推迟了。</p>
+                            <p>3. 虽然整体经济比较<span class="text-indigo-600 font-bold">低迷</span>，但对中国的直接<span class="text-indigo-600 font-bold">投资</span>依然保持稳定。</p>
+                        </div>
+                    </div>
+
+                    <!-- Dialogue 2 -->
+                    <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
+                        <p class="text-sm font-semibold text-slate-800">
+                            2. A: 你认为在中国投资的市场前景怎么样呢？
+                        </p>
+                        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 text-sm">
+                            <span class="font-bold text-indigo-600">B:</span>
+                            <div class="relative w-full">
+                                <input type="text" id="dlg-2" placeholder="请输入或点击右侧麦克风语音输入..." class="w-full pr-10 pl-3 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none">
+                                <button onclick="toggleSpeech('dlg-2')" class="absolute right-2 top-2 text-slate-400 hover:text-indigo-600" title="语音输入">
+                                    <i class="fa-solid fa-microphone"></i>
+                                </button>
+                            </div>
+                            <span class="text-xs font-bold text-slate-500 whitespace-nowrap">（外资 金额）</span>
+                        </div>
+                        <div class="flex justify-between items-center pt-1">
+                            <button onclick="toggleAnswer('ans-dlg-2')" class="text-xs text-indigo-600 font-semibold hover:underline flex items-center gap-1">
+                                <i class="fa-solid fa-eye"></i> 查看 3 个参考答案
+                            </button>
+                        </div>
+                        <div id="ans-dlg-2" class="hidden text-xs bg-white p-3 rounded-lg border border-slate-200 space-y-1.5 text-slate-700">
+                            <p class="font-bold text-indigo-800">💡 参考答案选项：</p>
+                            <p>1. 中国吸收<span class="text-indigo-600 font-bold">外资</span>的<span class="text-indigo-600 font-bold">金额</span>持续增长，市场前景非常广阔。</p>
+                            <p>2. 随着市场开放，吸引<span class="text-indigo-600 font-bold">外资</span>的总<span class="text-indigo-600 font-bold">金额</span>不断增加，前景十分看好。</p>
+                            <p>3. 实际使用<span class="text-indigo-600 font-bold">外资</span>的<span class="text-indigo-600 font-bold">金额</span>居高不下，说明投资者对中国市场充满信心。</p>
+                        </div>
+                    </div>
+
+                    <!-- Dialogue 3 -->
+                    <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
+                        <p class="text-sm font-semibold text-slate-800">
+                            3. A: 你觉得按现在的银行利率，我是把钱存银行好呢，还是拿来投资买房子好？
+                        </p>
+                        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 text-sm">
+                            <span class="font-bold text-indigo-600">B:</span>
+                            <div class="relative w-full">
+                                <input type="text" id="dlg-3" placeholder="请输入或点击右侧麦克风语音输入..." class="w-full pr-10 pl-3 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none">
+                                <button onclick="toggleSpeech('dlg-3')" class="absolute right-2 top-2 text-slate-400 hover:text-indigo-600" title="语音输入">
+                                    <i class="fa-solid fa-microphone"></i>
+                                </button>
+                            </div>
+                            <span class="text-xs font-bold text-slate-500 whitespace-nowrap">（在……情况下）</span>
+                        </div>
+                        <div class="flex justify-between items-center pt-1">
+                            <button onclick="toggleAnswer('ans-dlg-3')" class="text-xs text-indigo-600 font-semibold hover:underline flex items-center gap-1">
+                                <i class="fa-solid fa-eye"></i> 查看 3 个参考答案
+                            </button>
+                        </div>
+                        <div id="ans-dlg-3" class="hidden text-xs bg-white p-3 rounded-lg border border-slate-200 space-y-1.5 text-slate-700">
+                            <p class="font-bold text-indigo-800">💡 参考答案选项：</p>
+                            <p>1. <span class="text-indigo-600 font-bold">在</span>通货膨胀较高的<span class="text-indigo-600 font-bold">情况下</span>，买房投资可能比存银行更能保值。</p>
+                            <p>2. <span class="text-indigo-600 font-bold">在</span>银行存款利率下调的<span class="text-indigo-600 font-bold">情况下</span>，拿来投资买房收益会更高。</p>
+                            <p>3. <span class="text-indigo-600 font-bold">在</span>资金充裕的<span class="text-indigo-600 font-bold">情况下</span>，可以考虑投资房产。</p>
+                        </div>
+                    </div>
+
+                    <!-- Dialogue 4 -->
+                    <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
+                        <p class="text-sm font-semibold text-slate-800">
+                            4. A: 你认为上海是一座什么样的城市？
+                        </p>
+                        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 text-sm">
+                            <span class="font-bold text-indigo-600">B:</span>
+                            <div class="relative w-full">
+                                <input type="text" id="dlg-4" placeholder="请输入或点击右侧麦克风语音输入..." class="w-full pr-10 pl-3 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none">
+                                <button onclick="toggleSpeech('dlg-4')" class="absolute right-2 top-2 text-slate-400 hover:text-indigo-600" title="语音输入">
+                                    <i class="fa-solid fa-microphone"></i>
+                                </button>
+                            </div>
+                            <span class="text-xs font-bold text-slate-500 whitespace-nowrap">（仅次于 居……首位）</span>
+                        </div>
+                        <div class="flex justify-between items-center pt-1">
+                            <button onclick="toggleAnswer('ans-dlg-4')" class="text-xs text-indigo-600 font-semibold hover:underline flex items-center gap-1">
+                                <i class="fa-solid fa-eye"></i> 查看 3 个参考答案
+                            </button>
+                        </div>
+                        <div id="ans-dlg-4" class="hidden text-xs bg-white p-3 rounded-lg border border-slate-200 space-y-1.5 text-slate-700">
+                            <p class="font-bold text-indigo-800">💡 参考答案选项：</p>
+                            <p>1. 上海的经济实力<span class="text-indigo-600 font-bold">居</span>全国<span class="text-indigo-600 font-bold">首位</span>，国际影响力<span class="text-indigo-600 font-bold">仅次于</span>少数顶尖国际大都市。</p>
+                            <p>2. 上海的金融交易量<span class="text-indigo-600 font-bold">居</span>全国<span class="text-indigo-600 font-bold">首位</span>，港口吞吐量<span class="text-indigo-600 font-bold">仅次于</span>个别国际港口。</p>
+                            <p>3. 上海是一座现代化的金融中心，GDP<span class="text-indigo-600 font-bold">居</span>国内各大城市<span class="text-indigo-600 font-bold">首位</span>。</p>
+                        </div>
+                    </div>
+
+                    <!-- Dialogue 5 -->
+                    <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
+                        <p class="text-sm font-semibold text-slate-800">
+                            5. A: 最近银行利率又调整了，您认为这种调整对经济会有什么影响呢？
+                        </p>
+                        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 text-sm">
+                            <span class="font-bold text-indigo-600">B:</span>
+                            <div class="relative w-full">
+                                <input type="text" id="dlg-5" placeholder="请输入或点击右侧麦克风语音输入..." class="w-full pr-10 pl-3 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none">
+                                <button onclick="toggleSpeech('dlg-5')" class="absolute right-2 top-2 text-slate-400 hover:text-indigo-600" title="语音输入">
+                                    <i class="fa-solid fa-microphone"></i>
+                                </button>
+                            </div>
+                            <span class="text-xs font-bold text-slate-500 whitespace-nowrap">（有利于 不利于）</span>
+                        </div>
+                        <div class="flex justify-between items-center pt-1">
+                            <button onclick="toggleAnswer('ans-dlg-5')" class="text-xs text-indigo-600 font-semibold hover:underline flex items-center gap-1">
+                                <i class="fa-solid fa-eye"></i> 查看 3 个参考答案
+                            </button>
+                        </div>
+                        <div id="ans-dlg-5" class="hidden text-xs bg-white p-3 rounded-lg border border-slate-200 space-y-1.5 text-slate-700">
+                            <p class="font-bold text-indigo-800">💡 参考答案选项：</p>
+                            <p>1. 上调利率<span class="text-indigo-600 font-bold">有利于</span>防止经济过热，但可能<span class="text-indigo-600 font-bold">不利于</span>部分企业的短期融资。</p>
+                            <p>2. 适度调整利率<span class="text-indigo-600 font-bold">有利于</span>抑制通货膨胀，但短期内<span class="text-indigo-600 font-bold">不利于</span>股市的快速反弹。</p>
+                            <p>3. 这种调整<span class="text-indigo-600 font-bold">有利于</span>引导货币信贷合理增长，对整体经济健康发展非常有益。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 综合评分与表现总结 -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 text-center space-y-4">
+                <h3 class="text-lg font-bold text-slate-900">🎉 完成全套商务汉语综合测试！</h3>
+                <p class="text-xs text-slate-500">点击下方按钮可进行全套自动汇算与综合成就结算</p>
+                
+                <button onclick="evaluateFullCourse()" class="bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg shadow-indigo-200 transition flex items-center gap-2 mx-auto">
+                    <i class="fa-solid fa-trophy text-amber-300"></i> 生成综合复习评估报告
+                </button>
+
+                <div id="final-summary-card" class="hidden mt-6 p-6 bg-indigo-50 border border-indigo-200 rounded-2xl text-left space-y-3">
+                    <p id="final-score-text" class="text-xl font-bold text-indigo-900 text-center"></p>
+                    <p id="final-advice-text" class="text-sm text-indigo-700 leading-relaxed"></p>
+                </div>
+            </div>
+
+            <!-- 操作按钮 -->
+            <div class="flex justify-between items-center">
+                <button onclick="switchStep(2)" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold py-2.5 px-6 rounded-xl transition">
+                    <i class="fa-solid fa-arrow-left"></i> 上一步：选词填空
+                </button>
+            </div>
+        </div>
+
+        <!-- 语音识别状态浮窗 -->
+        <div id="speechModal" class="hidden fixed bottom-6 right-6 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 z-50">
+            <div class="flex items-center">
+                <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
+            </div>
+            <div class="text-xs">
+                <p id="speechStatus" class="font-bold text-blue-400">正在听取发音...</p>
+                <p class="text-slate-300">请读出您的表达句子</p>
+            </div>
+            <button onclick="stopSpeech()" class="ml-2 text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="bg-white border-t border-slate-200 py-4 mt-auto">
+        <div class="max-w-5xl mx-auto px-4 text-center text-xs text-slate-400">
+            商务汉语练习与检测系统 &copy; 2026 · 基于 Tailwind CSS 与 智能交互引擎
+        </div>
+    </footer>
+
+    <!-- JavaScript 逻辑与自动批改引擎 -->
+    <script>
+        // 正确答案映射与合法词汇库
+        const validDaiWords = ["贷款", "信贷", "房贷", "车贷", "存贷款", "借贷", "联贷", "放贷", "商贷", "公积金贷款"];
+        const validShangWords = ["外商", "商务", "商业", "商人", "商会", "经商", "商品", "电商", "招商", "客商", "协商", "商讨"];
+
+        const step1MatchAnswers = {
+            "match-2": "物价",
+            "match-3": "外资",
+            "match-4": "央行",
+            "match-5": "大幅",
+            "match-6": "同比",
+            "match-7": "累计",
+            "match-8": "上调",
+            "match-9": "截至",
+            "match-10": "信贷"
+        };
+
+        const step2ClozeAnswers = {
+            "cloze-1": "低迷",
+            "cloze-2": "大幅",
+            "cloze-3": "利率",
+            "cloze-4": "投资",
+            "cloze-5": "金额",
+            "cloze-6": "跨国",
+            "cloze-7": "截至",
+            "cloze-8": "活期",
+            "cloze-9": "现行",
+            "cloze-10": "累计"
+        };
+
+        let step1Score = 0;
+        let step2Score = 0;
+
+        // 切换分步页面
+        function switchStep(stepNum) {
+            document.querySelectorAll('.step-content').forEach(el => el.classList.remove('active'));
+            document.getElementById(`step-${stepNum}`).classList.add('active');
+
+            for (let i = 1; i <= 3; i++) {
+                const navEl = document.getElementById(`nav-step-${i}`);
+                if (i === stepNum) {
+                    navEl.className = "flex items-center gap-1.5 text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-full border border-indigo-200 font-semibold cursor-pointer";
+                    navEl.querySelector('span').className = "w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px]";
+                } else {
+                    navEl.className = "flex items-center gap-1.5 text-slate-400 px-3 py-1.5 rounded-full border border-transparent cursor-pointer";
+                    navEl.querySelector('span').className = "w-5 h-5 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-[10px]";
+                }
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // 批改 Step 1
+        function gradeStep1() {
+            let mindMapScore = 0;
+            // “贷”字组词校验 (4个, 每个5分)
+            for (let i = 1; i <= 4; i++) {
+                const val = document.getElementById(`dai-${i}`).value.trim();
+                if (validDaiWords.includes(val)) mindMapScore += 5;
+            }
+            // “商”字组词校验 (4个, 每个5分)
+            for (let i = 1; i <= 4; i++) {
+                const val = document.getElementById(`shang-${i}`).value.trim();
+                if (validShangWords.includes(val)) mindMapScore += 5;
+            }
+
+            // 匹配校验 (9题需要作答, 每题6.6分 ≈ 60分)
+            let matchScore = 0;
+            Object.keys(step1MatchAnswers).forEach(key => {
+                const userVal = document.getElementById(key).value.trim();
+                const correctVal = step1MatchAnswers[key];
+                const inputEl = document.getElementById(key);
+
+                if (userVal === correctVal) {
+                    matchScore += 6.66;
+                    inputEl.className = "w-28 text-center py-1 bg-emerald-50 border border-emerald-500 rounded-lg text-emerald-700 font-bold outline-none";
+                } else {
+                    inputEl.className = "w-28 text-center py-1 bg-rose-50 border border-rose-500 rounded-lg text-rose-700 font-bold outline-none";
+                }
+            });
+
+            step1Score = Math.min(100, Math.round(mindMapScore + matchScore));
+            const fbEl = document.getElementById('step1-feedback');
+            fbEl.classList.remove('hidden', 'bg-rose-50', 'border-rose-200', 'bg-emerald-50', 'border-emerald-200');
+
+            if (step1Score >= 80) {
+                fbEl.classList.add('bg-emerald-50', 'border-emerald-200', 'text-emerald-800');
+                fbEl.innerHTML = `<i class="fa-solid fa-circle-check"></i> 优秀！Step 1 得分：<strong>${step1Score} / 100 分</strong>。组词与词义理解非常到位！`;
+            } else {
+                fbEl.classList.add('bg-rose-50', 'border-rose-200', 'text-rose-800');
+                fbEl.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> Step 1 得分：<strong>${step1Score} / 100 分</strong>。红色框为需修正选项，请参考课文重新作答。`;
+            }
+        }
+
+        // 批改 Step 2
+        function gradeStep2() {
+            let correctCount = 0;
+            Object.keys(step2ClozeAnswers).forEach((key, index) => {
+                const userVal = document.getElementById(key).value;
+                const correctVal = step2ClozeAnswers[key];
+                const fb = document.getElementById(`fb-${key}`);
+                fb.classList.remove('hidden', 'text-emerald-600', 'text-rose-600');
+
+                if (userVal === correctVal) {
+                    correctCount++;
+                    fb.classList.add('text-emerald-600');
+                    fb.innerHTML = `<i class="fa-solid fa-check"></i> 回答正确！`;
+                } else {
+                    fb.classList.add('text-rose-600');
+                    fb.innerHTML = `<i class="fa-solid fa-xmark"></i> 回答错误。正确答案是：“<strong>${correctVal}</strong>”`;
+                }
+            });
+
+            step2Score = correctCount * 10;
+            const fbEl = document.getElementById('step2-feedback');
+            fbEl.classList.remove('hidden', 'bg-rose-50', 'text-rose-800', 'bg-emerald-50', 'text-emerald-800');
+
+            if (step2Score >= 80) {
+                fbEl.classList.add('bg-emerald-50', 'text-emerald-800', 'border-emerald-200');
+                fbEl.innerHTML = `🎉 恭喜！Step 2 选词填空得分：${step2Score} / 100 分！`;
+                if (typeof confetti === 'function') {
+                    confetti({ particleCount: 40, spread: 60, origin: { y: 0.7 } });
+                }
+            } else {
+                fbEl.classList.add('bg-rose-50', 'text-rose-800', 'border-rose-200');
+                fbEl.innerHTML = `Step 2 得分：${step2Score} / 100 分。请检查解析提示并修改错题。`;
+            }
+        }
+
+        // 切换控制答案显示
+        function toggleAnswer(ansId) {
+            const el = document.getElementById(ansId);
+            el.classList.toggle('hidden');
+        }
+
+        // 综合结算与评估
+        function evaluateFullCourse() {
+            const summaryCard = document.getElementById('final-summary-card');
+            const scoreText = document.getElementById('final-score-text');
+            const adviceText = document.getElementById('final-advice-text');
+
+            const avgScore = Math.round((step1Score + step2Score) / 2);
+            summaryCard.classList.remove('hidden');
+
+            scoreText.innerText = `综合测评得分：${avgScore} 分 (Step 1: ${step1Score}分 | Step 2: ${step2Score}分)`;
+
+            if (avgScore >= 85) {
+                adviceText.innerHTML = "🌟 <strong>表现卓越！</strong>您对高级商务汉语词汇组词、经贸词义对应以及复杂句型表达均掌握得非常扎实。能够非常流利准确地表达经济学观点！";
+            } else if (avgScore >= 70) {
+                adviceText.innerHTML = "👍 <strong>表现良好！</strong>您已基本掌握核心商务词汇与句型。建议针对错题集中的固定搭配（如“进行投资”、“居首位”）加强练习。";
+            } else {
+                adviceText.innerHTML = "💪 <strong>继续努力！</strong>建议回到 Step 1 与 Step 2，多借助悬浮拼音与释义提示重新复习生词和核心表达。";
+            }
+
+            if (typeof confetti === 'function') {
+                confetti({ particleCount: 70, spread: 80, origin: { y: 0.6 } });
+            }
+        }
+
+        // Web Speech API 语音识别
+        let activeInputId = null;
+        let recognition = null;
+
+        function initRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (SpeechRecognition) {
+                recognition = new SpeechRecognition();
+                recognition.lang = 'zh-CN';
+                recognition.continuous = false;
+                recognition.interimResults = true;
+
+                recognition.onstart = () => {
+                    document.getElementById('speechModal').classList.remove('hidden');
+                };
+
+                recognition.onresult = (event) => {
+                    let transcript = '';
+                    for (let i = event.resultIndex; i < event.results.length; ++i) {
+                        transcript += event.results[i][0].transcript;
+                    }
+                    if (activeInputId) {
+                        document.getElementById(activeInputId).value = transcript;
+                    }
+                };
+
+                recognition.onerror = () => {
+                    document.getElementById('speechStatus').innerText = '未能清晰识别，请重试';
+                };
+
+                recognition.onend = () => {
+                    document.getElementById('speechModal').classList.add('hidden');
+                };
+            }
+        }
+
+        function toggleSpeech(inputId) {
+            if (!recognition) initRecognition();
+            if (!recognition) {
+                alert("当前浏览器暂不支持 SpeechRecognition 语音输入 API，请直接输入打字作答。");
+                return;
+            }
+            activeInputId = inputId;
+            try {
+                recognition.start();
+            } catch(e) {
+                recognition.stop();
+            }
+        }
+
+        function stopSpeech() {
+            if (recognition) recognition.stop();
+            document.getElementById('speechModal').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
